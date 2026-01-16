@@ -1,0 +1,10 @@
+import os
+
+class Config:
+    SECRET_KEY = os.getenv("KLJUUUUUUUUUUUUUUUC")
+
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    JWT_SECRET_KEY = os.getenv("JWT_KLJUUUUUUUUUUUUUUUUC")
+    JWT_ACCESS_TOKEN_EXPIRES = 3600

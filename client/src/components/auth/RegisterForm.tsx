@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { IAuthAPI } from "../../api/auth/IAuthAPI";
 import { RegistrationUserDTO } from "../../models/auth/RegistrationUserDTO";
-import { UserRole } from "../../enums/UserRole";
 import { useAuth } from "../../hooks/useAuthHook";
 import { useNavigate } from "react-router-dom";
 

@@ -1,5 +1,5 @@
-from app.extensions import db
-from app.enums.UserRole import UserRole
+from app.Extensions import db
+from app.Domain.enums.UserRole import UserRole
 
 class User(db.Model):
     __database__ = 'users_db'
@@ -17,3 +17,4 @@ class User(db.Model):
     street = db.Column(db.String(100), nullable=True)
     number = db.Column(db.String(20), nullable=True)
     accountBalance = db.Column(db.Float, nullable=False, default=0.0)
+    profileImage = db.Column(db.String(200), nullable=True)
