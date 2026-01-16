@@ -10,7 +10,7 @@ type LoginFormProps = {
 
 export const LoginForm: React.FC<LoginFormProps> = ({ authAPI }) => {
   const [formData, setFormData] = useState<LoginUserDTO>({
-    username: "",
+    email: "",
     password: "",
   });
   const [error, setError] = useState<string>("");
@@ -55,16 +55,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ authAPI }) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <label htmlFor="username" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
-          Username
+        <label htmlFor="email" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Email
         </label>
         <input
           type="text"
-          id="username"
-          name="username"
-          value={formData.username}
+          id="email"
+          name="email"
+          value={formData.email}
           onChange={handleChange}
-          placeholder="Enter your username"
+          placeholder="Enter your email"
           required
           disabled={isLoading}
         />

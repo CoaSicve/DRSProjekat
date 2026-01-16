@@ -38,14 +38,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
 
   return (
     <nav className="titlebar" style={{ height: "60px", borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
-      {/* Navigacija */}
-      <div className="flex items-center gap-4">
-        <button className="btn btn-ghost" onClick={() => navigate("/Proizvodnja")}>Proizvodnja</button>
-        <button className="btn btn-ghost" onClick={() => navigate("/Prerada")}>Prerada</button>
-        <button className="btn btn-ghost" onClick={() => navigate("/Pakovanje")}>Pakovanje</button>
-        <button className="btn btn-ghost" onClick={() => navigate("/Skladistenje")}>Skladistenje</button>
-        <button className="btn btn-ghost" onClick={() => navigate("/Prodaja")}>Prodaja</button>
-      </div>
 
       {/* Profil */}
       <div className="flex items-center gap-3">
@@ -57,7 +49,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
             {user.profileImage ? (
               <img
                 src={user.profileImage}
-                alt={user.username}
+                alt={user.name}
                 style={{
                   width: "32px",
                   height: "32px",
@@ -81,7 +73,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
                   color: "#000",
                 }}
               >
-                {user.username.charAt(0).toUpperCase()}
+                {user.name.charAt(0).toUpperCase()}
               </div>
             )}
 

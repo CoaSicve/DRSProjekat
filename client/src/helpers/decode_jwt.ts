@@ -5,10 +5,10 @@ export const decodeJWT = (token: string): AuthTokenClaimsType | null => {
   try {
     const decoded = jwtDecode<AuthTokenClaimsType>(token);
 
-    if (decoded.id && decoded.username && decoded.role) {
+    if (decoded.id && decoded.email && decoded.role) {
       return {
         id: decoded.id,
-        username: decoded.username,
+        email: decoded.email,
         role: decoded.role,
       };
     }

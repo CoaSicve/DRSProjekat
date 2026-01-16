@@ -11,11 +11,16 @@ type RegisterFormProps = {
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
   const [formData, setFormData] = useState<RegistrationUserDTO>({
-    username: "",
     email: "",
     password: "",
-    role: UserRole.SELLER,
-    profileImage: "",
+    name: "",
+    lastName: "",
+    dateOfBirth: "",
+    gender: "",
+    state: "",
+    street: "",
+    number: "",
+    accountBalance: 0.00,
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string>("");
@@ -75,20 +80,55 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
       <div>
-        <label htmlFor="username" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
-          Username
+        <label htmlFor="name" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Name
         </label>
         <input
           type="text"
-          id="username"
-          name="username"
-          value={formData.username}
+          id="name"
+          name="name"
+          value={formData.name}
           onChange={handleChange}
-          placeholder="Choose a username"
+          placeholder="Enter your first name"
           required
           disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="lastName" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Last Name
+        </label>
+        <input
+          type="text"
+          id="lastName"
+          name="lastName"
+          value={formData.lastName}
+          onChange={handleChange}
+          placeholder="Enter your last name"
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="dateOfBirth" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Date of Birth
+        </label>
+        <input
+          type="date"
+          id="dateOfBirth"
+          name="dateOfBirth"
+          value={formData.dateOfBirth}
+          onChange={handleChange}
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
         />
       </div>
 
@@ -105,24 +145,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
           placeholder="your.email@example.com"
           required
           disabled={isLoading}
+          style={{marginBottom: "20px"}}
         />
-      </div>
-
-      <div>
-        <label htmlFor="role" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
-          Role
-        </label>
-        <select
-          id="role"
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          required
-          disabled={isLoading}
-        >
-          <option value={UserRole.SELLER}>Seller</option>
-          <option value={UserRole.ADMIN}>Admin</option>
-        </select>
       </div>
 
       <div>
@@ -138,6 +162,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
           placeholder="Create a password (min 6 characters)"
           required
           disabled={isLoading}
+          style={{marginBottom: "20px"}}
         />
       </div>
 
@@ -157,21 +182,92 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
           placeholder="Re-enter your password"
           required
           disabled={isLoading}
+          style={{marginBottom: "20px"}}
         />
       </div>
 
       <div>
-        <label htmlFor="profileImage" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
-          Profile Image URL <span style={{ color: "var(--win11-text-tertiary)", fontWeight: 400 }}>(Optional)</span>
+        <label htmlFor="gender" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Gender
         </label>
         <input
-          type="url"
-          id="profileImage"
-          name="profileImage"
-          value={formData.profileImage}
+          type="text"
+          id="gender"
+          name="gender"
+          value={formData.gender}
           onChange={handleChange}
-          placeholder="https://example.com/avatar.jpg"
+          placeholder="Enter your gender"
+          required
           disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="state" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          State
+        </label>
+        <input
+          type="text"
+          id="state"
+          name="state"
+          value={formData.state}
+          onChange={handleChange}
+          placeholder="Enter your state"
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="street" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Street
+        </label>
+        <input
+          type="text"
+          id="street"
+          name="street"
+          value={formData.street}
+          onChange={handleChange}
+          placeholder="Enter your street"
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="number" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Phone number
+        </label>
+        <input
+          type="text"
+          id="number"
+          name="number"
+          value={formData.number}
+          onChange={handleChange}
+          placeholder="Enter your phone number"
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="accountBalance" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
+          Account Balance
+        </label>
+        <input
+          type="text"
+          id="accountBalance"
+          name="accountBalance"
+          value={formData.accountBalance}
+          onChange={handleChange}
+          placeholder="Enter your account balance"
+          required
+          disabled={isLoading}
+          style={{marginBottom: "20px"}}
         />
       </div>
 
@@ -210,6 +306,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
           </div>
         </div>
       )}
+      </div>
 
       <button
         type="submit"

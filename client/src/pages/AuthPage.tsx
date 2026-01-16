@@ -12,7 +12,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ authAPI }) => {
 
   return (
     <div className="overlay-blur-none" style={{ position: "fixed" }}>
-      <div className="window" style={{ width: "500px", maxWidth: "90%" }}>
+      <div className="window" style={{ width: "600px", maxWidth: "90%" }}>
         <div className="titlebar">
           <div className="titlebar-icon">
             <img style={{marginTop: -5 }} src='/icon.png' width="20" height="20" />
