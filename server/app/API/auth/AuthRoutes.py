@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
 from app.Domain.DTOs import LoginUserDTO, RegistrationUserDTO
-from app.API.auth.service import AuthService
+from app.API.auth.AuthService import AuthService
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1")
 
@@ -11,7 +11,7 @@ def login():
     try:
         dto = LoginUserDTO(**request.get_json())
         token = AuthService.login(dto)
-        return jsonify({"access_token": token}), 200
+        return jsonify({"success": True, "token": token}), 200
 
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
@@ -25,7 +25,7 @@ def register():
     try:
         dto = RegistrationUserDTO(**request.get_json())
         token = AuthService.register(dto)
-        return jsonify({"access_token": token}), 201
+        return jsonify({"success": True, "token": token}), 201
 
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400

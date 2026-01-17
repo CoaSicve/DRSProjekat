@@ -13,7 +13,7 @@ def require_manager():
 
 def require_self_or_admin(user_id: int):
     claims = get_jwt()
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     role = claims.get("role")
 
     if role == UserRole.ADMIN.value:

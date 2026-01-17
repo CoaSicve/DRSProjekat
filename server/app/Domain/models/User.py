@@ -2,7 +2,7 @@ from app.Extensions import db
 from app.Domain.enums.UserRole import UserRole
 
 class User(db.Model):
-    __database__ = 'users_db'
+    __database__ = 'drs_users_db'
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -11,10 +11,10 @@ class User(db.Model):
     dateOfBirth = db.Column(db.Date, nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     role = db.Column(db.Enum(UserRole), nullable=False, default=UserRole.USER)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     gender = db.Column(db.String(20), nullable=True)
     state = db.Column(db.String(50), nullable=True)
     street = db.Column(db.String(100), nullable=True)
     number = db.Column(db.String(20), nullable=True)
     accountBalance = db.Column(db.Float, nullable=False, default=0.0)
-    profileImage = db.Column(db.String(200), nullable=True)
+    profileImage = db.Column(db.String(255), nullable=True)

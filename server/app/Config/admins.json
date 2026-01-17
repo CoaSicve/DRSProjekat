@@ -1,0 +1,16 @@
+[
+    {
+        "id": -1,
+        "email": "admin1@example.com",
+        "password": "scrypt:32768:8:1$vItS7DyrpRJ0n1M4$cfa2b35defbbf743ca03a85d1096082f4d5aabc16b1d3aaf4b72c58785b3daa7356639e940d90da8f901bc6dff52cd1adc459fc5ee22ece5a5b086f152a6691e",
+        "name": "Super Admin",
+        "role": "ADMIN"
+    },
+    {
+        "id": -2,
+        "email": "admin2@example.com",
+        "password": "scrypt:32768:8:1$6zXgmaDF31wLyvGa$e164596ed674c1369c4031c17c22461ac14725448b86849bdea342a01c069a74e8f777c8bee67615896048020e8699da49d9a26b5046e9ce2bccdcc99b00ed3b",
+        "name": "System Admin",
+        "role": "ADMIN"
+    }
+]

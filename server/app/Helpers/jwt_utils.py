@@ -9,11 +9,11 @@ def build_claims(user):
 
 def create_user_token(user) -> str:
     claims = build_claims(user)
-    access_token = create_access_token(identity=user.id, additional_claims=claims)
+    access_token = create_access_token(identity=str(user.id), additional_claims=claims)
     return access_token
 
 def get_current_user_id() -> int:
-    return get_jwt_identity()
+    return int(get_jwt_identity())
 
 def get_current_user_claims() -> dict:
     return get_jwt()

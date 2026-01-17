@@ -29,15 +29,43 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
     };
 
     fetchUser();
-  }, [authUser, userAPI]);
+  }, [authUser, userAPI, token]);
 
   const handleLogout = () => {
     logout();
-    navigate("/auth");
+    navigate("/");
   };
 
   return (
     <nav className="titlebar" style={{ height: "60px", borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+      {/* Navigation Links */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="btn btn-ghost"
+          style={{ padding: "8px 16px", fontSize: "13px" }}
+        >
+          Dashboard
+        </button>
+        {authUser?.role !== "ADMIN" && (
+        <button
+          onClick={() => navigate("/profile")}
+          className="btn btn-ghost"
+          style={{ padding: "8px 16px", fontSize: "13px" }}
+        >
+          My Profile
+        </button>
+        )}
+        {authUser?.role === "ADMIN" && (
+          <button
+            onClick={() => navigate("/admin/users")}
+            className="btn btn-ghost"
+            style={{ padding: "8px 16px", fontSize: "13px" }}
+          >
+            Manage Users
+          </button>
+        )}
+      </div>
 
       {/* Profil */}
       <div className="flex items-center gap-3">

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class UserDTO(BaseModel):
     id: int
@@ -6,4 +7,4 @@ class UserDTO(BaseModel):
     lastName: str = Field(..., max_length = 80)
     email: str = Field(..., max_length = 120)
     role: str
-    profileImage: str = Field(None, max_length = 200)
+    profileImage: Optional[str] = Field(None, max_length = 200)

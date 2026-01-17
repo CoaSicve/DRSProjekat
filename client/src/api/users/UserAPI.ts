@@ -29,4 +29,30 @@ export class UserAPI implements IUserAPI {
       })
     ).data;
   }
-}
+
+  async deleteUser(token: string, id: number): Promise<void> {
+    await this.axiosInstance.delete(`/users/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  async updateUserRole(token: string, id: number, role: string): Promise<UserDTO> {
+    return (
+      await this.axiosInstance.put<UserDTO>(
+        `/users/${id}/role`,
+        { role },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    ).data;
+  }
+
+  async updateUserProfile(token: string, id: number, data: Partial<UserDTO>): Promise<UserDTO> {
+    return (
+      await this.axiosInstance.put<UserDTO>(
+        `/users/${id}`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    ).data;
+  }
+  }
