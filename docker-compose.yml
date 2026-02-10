@@ -1,25 +1,27 @@
 version: '3.8'
 
 services:
-  # MySQL Database
   db:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: AuthSQL
     ports:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: drs_db
+      MYSQL_DATABASE: drs_users_db
+    command: >
+      --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234"]
       timeout: 20s
       retries: 10
+      interval: 5s
 
-  # Python Flask Server
   server:
     build:
       context: ./server
@@ -29,7 +31,8 @@ services:
       - "5050:5000"
     environment:
       FLASK_ENV: development
-      DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_db
+      DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_users_db
+      FLIGHTS_DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_flights_db
     depends_on:
       db:
         condition: service_healthy
@@ -39,7 +42,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # React Client
   client:
     build:
       context: ./client
@@ -48,7 +50,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://localhost:5000
+      VITE_GATEWAY_URL: http://localhost:5050
     depends_on:
       - server
     volumes:
