@@ -10,6 +10,8 @@ RUN pip install pydantic
 RUN pip install Cors
 RUN pip install werkzeug
 RUN pip install gunicorn
+RUN pip install pymysql
+RUN pip install cryptography
 
 COPY . .
 

@@ -16,7 +16,7 @@ class AuthService:
 
     @staticmethod
     def load_admins():
-        admins_path = os.path.join(os.getcwd(), "app", "config", "admins.json")
+        admins_path = os.path.join(os.getcwd(), "app", "Config", "admins.json")
         if not os.path.exists(admins_path):
             return []
 
