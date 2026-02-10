@@ -1,5 +1,6 @@
+version: "3.8"
+
 services:
-  # MySQL Database
   db:
     image: mysql:8.0
     container_name: AuthSQL
@@ -15,12 +16,12 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234"]
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p1234 --silent"]
       interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 35s
 
-  # Python Flask Server 1 - Users & Auth
   server:
     build:
       context: ./server
@@ -40,17 +41,22 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Python Flask Server 2 - Flights
   flight_service:
     build:
       context: ./flight_service
       dockerfile: Dockerfile
     container_name: flight_service
     ports:
-      - "5051:5000"   # ako i flight_service gunicorn sluša na 5000 u kontejneru
+      - "5051:5000"
+    env_file:
+      - .env
     environment:
       FLASK_ENV: development
       DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_flights_db
+
+      MAIL_SERVER: smtp.gmail.com
+      MAIL_PORT: "587"
+      MAIL_USE_TLS: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +66,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # React Client
   client:
     build:
       context: ./client

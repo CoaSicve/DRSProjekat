@@ -1,5 +1,9 @@
 from flask import Flask
 from app.Extensions.db import db
+from app.Extensions.socketio import socketio
+from app.Extensions.mail import mail
+from app.WebSockets.events import register_socketio_events
+from app.Services.FlightStatusWatcher import FlightStatusWatcher
 from app.Extensions.cors import cors
 from app.API.flights import flights_bp
 from app.API.airlines import airlines_bp
@@ -10,12 +14,17 @@ def create_app():
     app.config.from_object(Config)
     
     db.init_app(app)
+    mail.init_app(app)
     cors.init_app(app)
+    socketio.init_app(app, cors_allowed_origins=app.config.get("SOCKETIO_CORS_ALLOWED_ORIGINS", "*"))
+    register_socketio_events(socketio)
     
     app.register_blueprint(flights_bp)
     app.register_blueprint(airlines_bp)
     
     with app.app_context():
         db.create_all()
+
+    FlightStatusWatcher.start(interval_seconds=5)
     
     return app

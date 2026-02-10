@@ -5,6 +5,8 @@ from app.Domain.DTOs.FlightDTO import FlightDTO, CreateFlightDTO
 from app.Domain.enums.FlightStatus import FlightStatus
 from datetime import datetime
 
+from app.Extensions.socketio import socketio
+
 class FlightService:
     
     @staticmethod
@@ -42,6 +44,11 @@ class FlightService:
         db.session.add(flight)
         db.session.commit()
         
+        socketio.emit("flight_created", {
+            "id": flight.id,
+            "flightNumber": flight.flightNumber,
+            "status": flight.status
+        }, broadcast=True)
         return FlightService._to_dto(flight)
     
     @staticmethod
@@ -89,6 +96,12 @@ class FlightService:
         
         db.session.delete(flight)
         db.session.commit()
+
+        socketio.emit("flight_deleted", {
+            "id": flight.id,
+            "flightNumber": flight.flightNumber,
+            "status": flight.status
+        }, broadcast=True)
     
     @staticmethod
     def _to_dto(flight: Flight) -> FlightDTO:
