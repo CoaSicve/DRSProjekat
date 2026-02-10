@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
+
 from app.API.airlines.AirlineService import AirlineService
 from app.Domain.DTOs.AirlineDTO import CreateAirlineDTO
 
 airlines_bp = Blueprint("airlines", __name__, url_prefix="/api/v1/airlines")
+
 
 @airlines_bp.route("", methods=["GET"])
 def get_all_airlines():
@@ -13,6 +15,7 @@ def get_all_airlines():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @airlines_bp.route("/<int:airline_id>", methods=["GET"])
 def get_airline(airline_id: int):
     try:
@@ -20,6 +23,7 @@ def get_airline(airline_id: int):
         return jsonify(airline.model_dump()), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+
 
 @airlines_bp.route("", methods=["POST"])
 def create_airline():
@@ -31,6 +35,7 @@ def create_airline():
         return jsonify({"error": e.errors()}), 400
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
 
 @airlines_bp.route("/<int:airline_id>", methods=["DELETE"])
 def delete_airline(airline_id: int):

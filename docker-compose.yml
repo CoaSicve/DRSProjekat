@@ -1,19 +1,17 @@
-version: '3.8'
-
 services:
+  # MySQL Database
   db:
     image: mysql:8.0
     container_name: AuthSQL
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: "1234"
       MYSQL_DATABASE: drs_users_db
-    command: >
-      --default-authentication-plugin=mysql_native_password
+    command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - app-network
     healthcheck:
@@ -22,6 +20,7 @@ services:
       retries: 10
       interval: 5s
 
+  # Python Flask Server 1 - Users & Auth
   server:
     build:
       context: ./server
@@ -32,7 +31,6 @@ services:
     environment:
       FLASK_ENV: development
       DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_users_db
-      FLIGHTS_DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_flights_db
     depends_on:
       db:
         condition: service_healthy
@@ -42,6 +40,27 @@ services:
       - app-network
     restart: unless-stopped
 
+  # Python Flask Server 2 - Flights
+  flight_service:
+    build:
+      context: ./flight_service
+      dockerfile: Dockerfile
+    container_name: flight_service
+    ports:
+      - "5051:5000"   # ako i flight_service gunicorn sluša na 5000 u kontejneru
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_flights_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./flight_service:/app
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # React Client
   client:
     build:
       context: ./client
@@ -51,8 +70,10 @@ services:
       - "5173:5173"
     environment:
       VITE_GATEWAY_URL: http://localhost:5050
+      VITE_FLIGHTS_URL: http://localhost:5051
     depends_on:
       - server
+      - flight_service
     volumes:
       - ./client/src:/app/src
     networks:
