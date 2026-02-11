@@ -10,6 +10,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import FlightsPage from "./pages/FlightsPage";
+import MyFlightsPage from "./pages/MyFlightsPage";
 import { FlightCreationPage } from "./pages/FlightCreationPage";
 import { DashboardNavbar } from "./components/dashboard/navbar/Navbar";
 import { useAuth } from "./hooks/useAuthHook";
@@ -25,7 +26,7 @@ function App() {
     console.log("App rendered");
   }, []);
 
-  // Show navbar on all routes except auth page
+
   const showNavbar = user && location.pathname !== "/";
 
   return (
@@ -63,6 +64,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="user,manager,admin">
               <FlightsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-flights"
+          element={
+            <ProtectedRoute requiredRole="user,manager,admin">
+              <MyFlightsPage />
             </ProtectedRoute>
           }
         />
