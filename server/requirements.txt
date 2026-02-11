@@ -2,7 +2,10 @@ flask
 flask-cors
 flask-jwt-extended
 flask_sqlalchemy
+flask_mail
 pydantic
 Cors
 werkzeug.security
 python-dotenv
+requests
+flask_sockertio

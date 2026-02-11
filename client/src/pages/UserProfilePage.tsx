@@ -22,6 +22,8 @@ export const UserProfilePage: React.FC = () => {
   const [success, setSuccess] = useState<string>("");
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string>("");
+  const [showAddBalance, setShowAddBalance] = useState(false);
+  const [addBalanceAmount, setAddBalanceAmount] = useState<string>("");
   const { token, user: authUser } = useAuth();
   const serverBase = import.meta.env.VITE_GATEWAY_URL.replace(/\/api\/v1$/, "");
 
@@ -130,6 +132,30 @@ export const UserProfilePage: React.FC = () => {
     setProfileImage(null);
     setTimeout(() => setSuccess(""), 3000);
     return updatedUser;
+  };
+
+  const handleAddBalance = async () => {
+    if (!addBalanceAmount || isNaN(Number(addBalanceAmount))) {
+      setError("Please enter a valid amount");
+      return;
+    }
+
+    try {
+      const amount = Number(addBalanceAmount);
+      const newBalance = (user?.accountBalance || 0) + amount;
+      const updatedUser = await userAPI.updateUserProfile(
+        token!,
+        authUser!.id,
+        { accountBalance: newBalance }
+      );
+      setUser(updatedUser);
+      setAddBalanceAmount("");
+      setShowAddBalance(false);
+      setSuccess("Balance updated successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Failed to update balance");
+    }
   };
 
   if (loading) {
@@ -321,6 +347,132 @@ export const UserProfilePage: React.FC = () => {
               disabled
               className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
             />
+          </div>
+
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label className="block text-sm font-medium mb-1">Account Balance</label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  color: "var(--win11-accent)",
+                  padding: "10px 16px",
+                  borderRadius: "6px",
+                  background: "rgba(96, 205, 255, 0.1)",
+                  border: "1px solid var(--win11-divider)",
+                  flex: 1,
+                }}
+              >
+                ${(user?.accountBalance || 0).toFixed(2)}
+              </div>
+              <button
+                onClick={() => setShowAddBalance(!showAddBalance)}
+                style={{
+                  padding: "8px 14px",
+                  background: "rgba(96, 205, 255, 0.8)",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(96, 205, 255, 1)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(96, 205, 255, 0.8)")
+                }
+              >
+                Add Funds
+              </button>
+            </div>
+
+            {showAddBalance && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "12px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--win11-divider)",
+                  display: "flex",
+                  gap: "8px",
+                  alignItems: "flex-end",
+                }}
+              >
+                <input
+                  type="number"
+                  placeholder="Amount to add"
+                  value={addBalanceAmount}
+                  onChange={(e) => setAddBalanceAmount(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    border: "1px solid var(--win11-divider)",
+                    borderRadius: "4px",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    color: "var(--win11-text-primary)",
+                    fontSize: "12px",
+                  }}
+                />
+                <button
+                  onClick={handleAddBalance}
+                  style={{
+                    padding: "6px 12px",
+                    background: "rgba(34, 197, 94, 0.8)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "rgba(34, 197, 94, 1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "rgba(34, 197, 94, 0.8)")
+                  }
+                >
+                  Submit
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddBalance(false);
+                    setAddBalanceAmount("");
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    background: "rgba(107, 114, 128, 0.8)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "rgba(107, 114, 128, 1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "rgba(107, 114, 128, 0.8)")
+                  }
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

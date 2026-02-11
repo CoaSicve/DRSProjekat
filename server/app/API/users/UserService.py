@@ -52,7 +52,7 @@ class UserService:
             raise ValueError("User not found")
         
         # Update allowed fields
-        allowed_fields = ['name', 'lastName', 'dateOfBirth', 'gender', 'state', 'street', 'number', 'profileImage']
+        allowed_fields = ['name', 'lastName', 'dateOfBirth', 'gender', 'state', 'street', 'number', 'profileImage', 'accountBalance']
         for field in allowed_fields:
             if field in data:
                 # Convert empty strings to None for optional fields
