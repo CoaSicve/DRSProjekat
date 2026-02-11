@@ -4,6 +4,8 @@ from app.Domain.models.Airline import Airline
 from app.Domain.DTOs.FlightDTO import FlightDTO, CreateFlightDTO
 from app.Domain.enums.FlightStatus import FlightStatus
 from datetime import datetime
+from app.Services.EmailService import EmailService
+from app.Services.FlightMailTemplates import flight_created_body, flight_status_changed_body
 
 from app.Extensions.socketio import socketio
 
@@ -43,12 +45,17 @@ class FlightService:
         
         db.session.add(flight)
         db.session.commit()
+
+        EmailService.send(
+            subject="✈️ Novi let kreiran",
+            body=flight_created_body(flight)
+        )
         
         socketio.emit("flight_created", {
             "id": flight.id,
-            "flightNumber": flight.flightNumber,
-            "status": flight.status
-        }, broadcast=True)
+            "name": flight.name,
+            "status": flight.status.value if hasattr(flight.status, "value") else flight.status
+        })
         return FlightService._to_dto(flight)
     
     @staticmethod
@@ -57,8 +64,14 @@ class FlightService:
         if not flight:
             raise ValueError("Flight not found")
         
+        old_status = flight.status
         flight.status = FlightStatus.APPROVED
         db.session.commit()
+
+        EmailService.send(
+            subject="✅ Let odobren",
+            body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
+        )
         
         return FlightService._to_dto(flight)
     
@@ -68,9 +81,20 @@ class FlightService:
         if not flight:
             raise ValueError("Flight not found")
         
+        old_status = flight.status
         flight.status = FlightStatus.REJECTED
         flight.rejection_reason = reason
         db.session.commit()
+
+        EmailService.send(
+            subject="❌ Let odbijen",
+            body=flight_status_changed_body(
+                flight,
+                getattr(old_status, "value", old_status),
+                flight.status.value,
+                reason=reason
+            )
+        )
         
         return FlightService._to_dto(flight)
     
@@ -83,8 +107,14 @@ class FlightService:
         if flight.status == FlightStatus.COMPLETED:
             raise ValueError("Cannot cancel a completed flight")
         
+        old_status = flight.status
         flight.status = FlightStatus.CANCELLED
         db.session.commit()
+
+        EmailService.send(
+            subject="🛑 Let otkazan",
+            body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
+        )
         
         return FlightService._to_dto(flight)
     
@@ -99,9 +129,9 @@ class FlightService:
 
         socketio.emit("flight_deleted", {
             "id": flight.id,
-            "flightNumber": flight.flightNumber,
-            "status": flight.status
-        }, broadcast=True)
+            "name": flight.name,
+            "status": flight.status.value if hasattr(flight.status, "value") else flight.status
+        })
     
     @staticmethod
     def _to_dto(flight: Flight) -> FlightDTO:

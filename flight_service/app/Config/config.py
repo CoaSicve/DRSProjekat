@@ -18,6 +18,9 @@ class Config:
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", MAIL_USERNAME)
+    MAIL_ENABLED = os.getenv("MAIL_ENABLED", "true").lower() == "true"
+    MAIL_TEST_TO = os.getenv("MAIL_TEST_TO")
+    MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "DRS Flight Service")
 
     # SocketIO (opciono)
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.getenv("SOCKETIO_CORS_ALLOWED_ORIGINS", "*")
