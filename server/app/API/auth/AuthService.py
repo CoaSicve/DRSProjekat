@@ -31,11 +31,27 @@ class AuthService:
         return request.remote_addr
 
     @staticmethod
+    def _create_admin_token(admin_data):
+        """
+        Kreira JWT token za admina koristeći postojeću create_user_token funkciju.
+        """
+        # Kreiraj mock objekat koji ima sve potrebne atribute
+        class AdminUser:
+            def __init__(self, admin_data):
+                self.id = admin_data.get("id", -1)
+                self.email = admin_data["email"]
+                self.role = UserRole.ADMIN
+        
+        admin_user = AdminUser(admin_data)
+        return create_user_token(admin_user)
+
+    @staticmethod
     def login(dto):
         global failed_attempts, blocked_ips
 
         client_ip = AuthService._get_client_ip()
 
+        # Provera blokiranih IP-ova
         if client_ip in blocked_ips:
             if blocked_ips[client_ip] > datetime.utcnow():
                 remaining = (blocked_ips[client_ip] - datetime.utcnow()).total_seconds()
@@ -44,22 +60,19 @@ class AuthService:
                 del blocked_ips[client_ip]
                 failed_attempts[client_ip] = 0
 
+        # Proveri admin login prvo
         admins = AuthService.load_admins()
-        print(f"Loaded admins: {admins}")
         for admin in admins:
             if admin["email"] == dto.email:
                 if not verify_password(admin["password"], dto.password):
-                    break 
+                    break  # Pogrešna lozinka, nastavi sa normalnim korisnicima
 
+                # Admin login uspešan
                 failed_attempts[client_ip] = 0
                 print(f"Admin {admin['email']} logged in successfully.")
-                return create_user_token(User(
-                    id=admin.get("id", -1),
-                    email=admin["email"],
-                    name=admin["name"],
-                    role=UserRole.ADMIN
-                ))
+                return AuthService._create_admin_token(admin)
 
+        # Proveri normalnog korisnika
         user = User.query.filter_by(email=dto.email).first()
 
         if not user or not verify_password(user.password, dto.password):
@@ -71,11 +84,11 @@ class AuthService:
 
             raise ValueError("Invalid email or password")
 
+        # Login uspešan
         failed_attempts[client_ip] = 0
         blocked_ips.pop(client_ip, None)
 
         return create_user_token(user)
-
 
     @staticmethod
     def register(dto):

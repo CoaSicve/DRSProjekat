@@ -2,6 +2,7 @@ from flask import Flask
 from app.Extensions.db import db
 from app.Extensions.socketio import socketio
 from app.Extensions.mail import mail
+from app.Extensions.jwt import jwt
 from app.WebSockets.events import register_socketio_events
 from app.Services.FlightStatusWatcher import FlightStatusWatcher
 from app.Extensions.cors import cors
@@ -16,6 +17,7 @@ def create_app():
     
     db.init_app(app)
     mail.init_app(app)
+    jwt.init_app(app)
     cors.init_app(app)
     socketio.init_app(app, cors_allowed_origins=app.config.get("SOCKETIO_CORS_ALLOWED_ORIGINS", "*"))
     register_socketio_events(socketio)

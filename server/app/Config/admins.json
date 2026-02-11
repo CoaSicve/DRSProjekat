@@ -1,8 +1,8 @@
 [
     {
         "id": -1,
-        "email": "admin1@example.com",
-        "password": "scrypt:32768:8:1$vItS7DyrpRJ0n1M4$cfa2b35defbbf743ca03a85d1096082f4d5aabc16b1d3aaf4b72c58785b3daa7356639e940d90da8f901bc6dff52cd1adc459fc5ee22ece5a5b086f152a6691e",
+        "email": "gorangrcic68@gmail.com",
+        "password": "scrypt:32768:8:1$VZY4dj0xZc1fzzuf$e977ed48a4d72046bfa6fe26614d48d674432243bfab62de0ef93815c9876d9f07230223797a188e2295a09c801a9ca8690ae65b51700110a5f3b06342e63592",
         "name": "Super Admin",
         "role": "ADMIN"
     },

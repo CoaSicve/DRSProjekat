@@ -6,7 +6,6 @@ from app.Domain.enums.FlightStatus import FlightStatus
 from datetime import datetime
 from app.Services.EmailService import EmailService
 from app.Services.FlightMailTemplates import flight_created_body, flight_status_changed_body
-
 from app.Extensions.socketio import socketio
 
 class FlightService:
@@ -24,7 +23,7 @@ class FlightService:
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def create_flight(dto: CreateFlightDTO, created_by_user_id: int):
+    def create_flight(dto: CreateFlightDTO, created_by_user_id: int, user_email: str):  # 🆕 dodato user_email
         # Validate airline exists
         airline = Airline.query.get(dto.airline_id)
         if not airline:
@@ -46,7 +45,9 @@ class FlightService:
         db.session.add(flight)
         db.session.commit()
 
+        # 🆕 Šalje email korisniku koji je kreirao let
         EmailService.send(
+            to=user_email,
             subject="✈️ Novi let kreiran",
             body=flight_created_body(flight)
         )
@@ -59,7 +60,7 @@ class FlightService:
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def approve_flight(flight_id: int):
+    def approve_flight(flight_id: int, admin_email: str):  # 🆕 dodato admin_email
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -68,7 +69,9 @@ class FlightService:
         flight.status = FlightStatus.APPROVED
         db.session.commit()
 
+        # 🆕 Šalje email adminu koji je odobrio
         EmailService.send(
+            to=admin_email,
             subject="✅ Let odobren",
             body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
         )
@@ -76,7 +79,7 @@ class FlightService:
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def reject_flight(flight_id: int, reason: str):
+    def reject_flight(flight_id: int, reason: str, admin_email: str):  # 🆕 dodato admin_email
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -86,7 +89,9 @@ class FlightService:
         flight.rejection_reason = reason
         db.session.commit()
 
+        # 🆕 Šalje email adminu koji je odbio
         EmailService.send(
+            to=admin_email,
             subject="❌ Let odbijen",
             body=flight_status_changed_body(
                 flight,
@@ -99,7 +104,7 @@ class FlightService:
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def cancel_flight(flight_id: int):
+    def cancel_flight(flight_id: int, admin_email: str):  # 🆕 dodato admin_email
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -111,7 +116,9 @@ class FlightService:
         flight.status = FlightStatus.CANCELLED
         db.session.commit()
 
+        # 🆕 Šalje email adminu koji je otkazao
         EmailService.send(
+            to=admin_email,
             subject="🛑 Let otkazan",
             body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
         )

@@ -3,6 +3,10 @@ import os
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "flight-service-secret")
     
+    # JWT - MORA BITI ISTI KAO U USER SERVICE!
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-jwt-secret-key-change-in-production")
+    JWT_ACCESS_TOKEN_EXPIRES = 3600
+    
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL", 
         "mysql+pymysql://root:1234@db:3306/drs_flights_db"
@@ -22,5 +26,5 @@ class Config:
     MAIL_TEST_TO = os.getenv("MAIL_TEST_TO")
     MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "DRS Flight Service")
 
-    # SocketIO (opciono)
+    # SocketIO
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.getenv("SOCKETIO_CORS_ALLOWED_ORIGINS", "*")
