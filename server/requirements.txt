@@ -5,3 +5,4 @@ flask_sqlalchemy
 pydantic
 Cors
 werkzeug.security
+python-dotenv

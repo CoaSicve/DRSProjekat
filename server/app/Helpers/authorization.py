@@ -15,11 +15,12 @@ def require_self_or_admin(user_id: int):
     claims = get_jwt()
     current_user_id = int(get_jwt_identity())
     role = claims.get("role")
+    print(f"Current user ID: {current_user_id}, Role: {role}, Target user ID: {user_id}")
 
     if role == UserRole.ADMIN.value:
         return
 
-    if role == UserRole.USER.value and current_user_id == user_id:
+    if current_user_id == user_id:
         return
 
     raise PermissionError("Access denied")

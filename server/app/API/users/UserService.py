@@ -1,3 +1,7 @@
+import json
+import os
+from typing import Optional
+
 from app.Extensions import db
 from app.Domain.models.User import User
 from app.Domain.DTOs import UserDTO
@@ -14,7 +18,10 @@ class UserService:
     def get_user_by_id(user_id: int):
         user = User.query.get(user_id)
         if not user:
-            raise ValueError("User not found")
+            admin = UserService._get_admin_by_id(user_id)
+            if not admin:
+                raise ValueError("User not found")
+            return admin
         return UserService._to_dto(user)
 
     @staticmethod
@@ -66,4 +73,26 @@ class UserService:
             email=user.email,
             role=user.role.value,
             profileImage=user.profileImage
+        )
+
+    @staticmethod
+    def _get_admin_by_id(user_id: int) -> Optional[UserDTO]:
+        admins_path = os.path.join(os.getcwd(), "app", "Config", "admins.json")
+        if not os.path.exists(admins_path):
+            return None
+
+        with open(admins_path, "r") as file:
+            admins = json.load(file)
+
+        admin = next((item for item in admins if item.get("id") == user_id), None)
+        if not admin:
+            return None
+
+        return UserDTO(
+            id=admin.get("id", user_id),
+            name=admin.get("name", "Admin"),
+            lastName=admin.get("lastName", ""),
+            email=admin.get("email", ""),
+            role=admin.get("role", UserRole.ADMIN.value),
+            profileImage=admin.get("profileImage")
         )
