@@ -1,6 +1,8 @@
 import requests
 from flask import current_app
 
+from app.Extensions import socketio
+
 
 class FlightService:
 
@@ -29,13 +31,30 @@ class FlightService:
     @staticmethod
     def create_flight(data: dict, token: str):
         try:
+            print(f"Creating flight with data: {data} and token: {token}")
             headers = {"Authorization": f"Bearer {token}"}
             response = requests.post(
                 f"{FlightService._get_base_url()}/api/v1/flights",
                 json=data,
                 headers=headers
             )
+            print(f"Flight creation response status: {response.status_code}")
             response.raise_for_status()
+            try:
+                flight_response = response.json()
+                socketio.emit("flight_pending_approval", {
+                    "id": flight_response.get("id"),
+                    "name": flight_response.get("name"),
+                    "status": flight_response.get("status"),
+                    "created_by": flight_response.get("created_by_user_id"),
+                    "airline": flight_response.get("airline_name"),
+                    "departure": flight_response.get("departure_airport"),
+                    "arrival": flight_response.get("arrival_airport"),
+                    "departure_time": str(flight_response.get("departure_time"))
+                }, room="role_ADMIN")
+                print("Emitted flight_pending_approval event to ADMINs")
+            except Exception as e:
+                print(f"Failed to emit WebSocket event: {e}")
             return response.json()
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Failed to create flight: {str(e)}")

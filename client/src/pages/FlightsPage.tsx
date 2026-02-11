@@ -4,9 +4,13 @@ import { FlightDTO } from "../models/flights/FlightDTO";
 import { useAuth } from "../hooks/useAuthHook";
 import { UserRole } from "../enums/UserRole";
 import { PurchasesAPI } from "../api/purchases/PurchasesAPI";
+import { useWebSocketContext } from "../contexts/WebSocketContext";
+import { AirlinesAPI } from "../api/airlines/AirlinesAPI";
+import { AirlineDTO } from "../models/flights/AirlineDTO";
 
 const flightsAPI = new FlightsAPI();
 const purchasesAPI = new PurchasesAPI();
+const airlinesAPI = new AirlinesAPI();
 
 const fmtDate = (iso?: string) => {
   if (!iso) return "-";
@@ -34,7 +38,9 @@ type FlightTab = "upcoming" | "ongoing" | "past";
 
 const FlightsPage: React.FC = () => {
   const { user, token } = useAuth();
+  const { subscribe } = useWebSocketContext();
   const [flights, setFlights] = useState<FlightDTO[]>([]);
+  const [airlines, setAirlines] = useState<AirlineDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FlightTab>("upcoming");
@@ -43,20 +49,28 @@ const FlightsPage: React.FC = () => {
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [processingFlightId, setProcessingFlightId] = useState<number | null>(null);
   const [rejectionReasons, setRejectionReasons] = useState<{ [key: number]: string }>({});
+  const [selectedAirlineId, setSelectedAirlineId] = useState<number | null>(null);
+  const [searchText, setSearchText] = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
-    const fetchFlights = async () => {
+    const fetchData = async () => {
       try {
-        const data = await flightsAPI.getAllFlights();
-        if (mounted) setFlights(data || []);
+        const [flightsData, airlinesData] = await Promise.all([
+          flightsAPI.getAllFlights(),
+          airlinesAPI.getAllAirlines(),
+        ]);
+        if (mounted) {
+          setFlights(flightsData || []);
+          setAirlines(airlinesData || []);
+        }
       } catch (err: any) {
         if (mounted) setError(err?.message || "Unknown error");
       } finally {
         if (mounted) setLoading(false);
       }
     };
-    fetchFlights();
+    fetchData();
     return () => {
       mounted = false;
     };
@@ -69,23 +83,65 @@ const FlightsPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Subscribe to WebSocket events for flight updates
+  useEffect(() => {
+    const unsubscribe = subscribe("flight_pending_approval", (data) => {
+      console.log("🔔 Flight pending approval received, refreshing flights...", data);
+      // Refresh flights when new flight is created
+      const refreshFlights = async () => {
+        try {
+          const updatedFlights = await flightsAPI.getAllFlights();
+          setFlights(updatedFlights || []);
+          setActionMessage({ type: "success", text: `New flight "${data.name}" is pending approval.` });
+        } catch (err: any) {
+          console.error("Failed to refresh flights:", err);
+        }
+      };
+      refreshFlights();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [subscribe]);
+
   const categorizeFlights = () => {
     const now = currentTime;
     const upcoming: FlightDTO[] = [];
     const ongoing: FlightDTO[] = [];
     const past: FlightDTO[] = [];
 
-    // Filter flights based on user role
+    // Filter flights based on user role, airline selection, and search text
     const filteredFlights = flights.filter((flight) => {
-      // Managers and Admins see all flights
-      if (user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) {
-        return true;
+      // Check user role permissions
+      if (user?.role !== UserRole.MANAGER && user?.role !== UserRole.ADMIN) {
+        if (!["APPROVED", "CANCELLED", "ONGOING", "COMPLETED"].includes(flight.status)) {
+          return false;
+        }
       }
-      // Regular users only see approved, cancelled, ongoing, or completed flights
-      return ["APPROVED", "CANCELLED", "ONGOING", "COMPLETED"].includes(flight.status);
+      
+      // Check airline filter
+      if (selectedAirlineId !== null && flight.airline_id !== selectedAirlineId) {
+        return false;
+      }
+      
+      // Check search text (case-insensitive)
+      if (searchText.trim()) {
+        const lowerSearch = searchText.toLowerCase();
+        if (!flight.name.toLowerCase().includes(lowerSearch)) {
+          return false;
+        }
+      }
+      
+      return true;
     });
 
     filteredFlights.forEach((flight) => {
+      if (flight.status === "CANCELLED") {
+        past.push(flight);
+        return;
+      }
+
       const departure = new Date(flight.departure_time);
       const landing = new Date(departure.getTime() + flight.duration_minutes * 60000);
 
@@ -193,6 +249,22 @@ const FlightsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteFlight = async (flightId: number, flightName: string) => {
+    setProcessingFlightId(flightId);
+    setActionMessage(null);
+
+    try {
+      await flightsAPI.deleteFlight(token || "", flightId);
+      setActionMessage({ type: "success", text: `Flight "${flightName}" deleted successfully.` });
+      const data = await flightsAPI.getAllFlights();
+      setFlights(data || []);
+    } catch (err: any) {
+      setActionMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Failed to delete flight." });
+    } finally {
+      setProcessingFlightId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -266,6 +338,74 @@ const FlightsPage: React.FC = () => {
             {actionMessage.text}
           </div>
         )}
+
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            marginBottom: "24px",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Search flights by name..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{
+              flex: 1,
+              minWidth: "200px",
+              padding: "10px 14px",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "var(--win11-text-primary)",
+              border: "1px solid var(--win11-divider)",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontFamily: "inherit",
+              transition: "all 0.2s ease",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              e.currentTarget.style.borderColor = "var(--win11-accent)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+              e.currentTarget.style.borderColor = "var(--win11-divider)";
+            }}
+          />
+          
+          <select
+            value={selectedAirlineId ?? ""}
+            onChange={(e) => setSelectedAirlineId(e.target.value ? Number(e.target.value) : null)}
+            style={{
+              padding: "10px 14px",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "var(--win11-text-primary)",
+              border: "1px solid var(--win11-divider)",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontFamily: "inherit",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              e.currentTarget.style.borderColor = "var(--win11-accent)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+              e.currentTarget.style.borderColor = "var(--win11-divider)";
+            }}
+          >
+            <option value="">All Airlines</option>
+            {airlines.map((airline) => (
+              <option key={airline.id} value={airline.id}>
+                {airline.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div
           style={{
@@ -606,6 +746,36 @@ const FlightsPage: React.FC = () => {
                               }}
                             >
                               {processingFlightId === f.id ? "Cancelling..." : "Cancel"}
+                            </button>
+                          )}
+                          {user?.role === UserRole.ADMIN && (
+                            <button
+                              onClick={() => handleDeleteFlight(f.id, f.name)}
+                              disabled={processingFlightId === f.id}
+                              style={{
+                                padding: "8px 16px",
+                                background: processingFlightId === f.id ? "rgba(107, 114, 128, 0.15)" : "rgba(159, 18, 57, 0.3)",
+                                color: processingFlightId === f.id ? "#9ca3af" : "#ff1744",
+                                border: `1px solid ${processingFlightId === f.id ? "#9ca3af" : "#ff1744"}`,
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                cursor: processingFlightId === f.id ? "not-allowed" : "pointer",
+                                transition: "all 0.2s ease",
+                                marginLeft: "8px",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (processingFlightId !== f.id) {
+                                  e.currentTarget.style.background = "rgba(159, 18, 57, 0.5)";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (processingFlightId !== f.id) {
+                                  e.currentTarget.style.background = "rgba(159, 18, 57, 0.3)";
+                                }
+                              }}
+                            >
+                              {processingFlightId === f.id ? "Deleting..." : "Delete"}
                             </button>
                           )}
                         </td>

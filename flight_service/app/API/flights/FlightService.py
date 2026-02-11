@@ -27,7 +27,6 @@ class FlightService:
         airline = Airline.query.get(dto.airline_id)
         if not airline:
             raise ValueError("Airline not found")
-        
         flight = Flight(
             name=dto.name,
             airline_id=dto.airline_id,
@@ -53,20 +52,6 @@ class FlightService:
             )
         except Exception as e:
             print(f"Failed to send email: {e}")
-        
-        try:
-            socketio.emit("flight_pending_approval", {
-                "id": flight.id,
-                "name": flight.name,
-                "status": flight.status.value,
-                "created_by": created_by_user_id,
-                "airline": airline.name,
-                "departure": flight.departure_airport,
-                "arrival": flight.arrival_airport,
-                "departure_time": str(flight.departure_time)
-            }, room="role_ADMIN")
-        except Exception as e:
-            print(f"Failed to emit WebSocket event: {e}")
         
         return FlightService._to_dto(flight)
     

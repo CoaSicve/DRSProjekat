@@ -3,7 +3,6 @@ from app.Extensions.db import db
 from app.Extensions.socketio import socketio
 from app.Extensions.mail import mail
 from app.Extensions.jwt import jwt
-from app.WebSockets.events import register_socketio_events
 from app.Services.FlightStatusWatcher import FlightStatusWatcher
 from app.Extensions.cors import cors
 from app.API.flights import flights_bp
@@ -21,14 +20,7 @@ def create_app():
     mail.init_app(app)
     jwt.init_app(app)
     cors.init_app(app)
-    socketio.init_app(
-        app, 
-        cors_allowed_origins="*",
-        async_mode='eventlet',
-        logger=True,
-        engineio_logger=True
-    )
-    register_socketio_events(socketio)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
     
     app.register_blueprint(flights_bp)
     app.register_blueprint(airlines_bp)
