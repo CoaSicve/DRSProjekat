@@ -5,7 +5,7 @@ from app.Domain.enums.PurchaseStatus import PurchaseStatus
 class Purchase(db.Model):
     __tablename__ = 'purchases'
 
-    id = db.Column(db.Integer, primary_key=True, autoicrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, nullable=False)
     flight_id = db.Column(db.Integer, db.ForeignKey('flights.id'), nullable=False)
     purchase_time = db.Column(db.DateTime, default=datetime.utcnow)

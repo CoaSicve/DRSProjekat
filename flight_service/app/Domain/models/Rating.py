@@ -4,7 +4,7 @@ from datetime import datetime
 class Rating(db.Model):
     __tablename__ = 'ratings'
 
-    id = db.Column(db.Integer, primary_key=True, autoicrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoicnrement=True)
     user_id = db.Column(db.Integer, nullable=False)
     flight_id = db.Column(db.Integer, db.ForeignKey('flights.id'),nullable=False)
     rating = db.Column(db.Integer, nullable=False) #Ocena 1-5
