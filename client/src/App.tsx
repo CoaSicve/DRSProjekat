@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/protected_route/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
+import FlightsPage from "./pages/FlightsPage";
 
 const auth_api: IAuthAPI = new AuthAPI();
 const user_api: IUserAPI = new UserAPI();
@@ -46,6 +47,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/flights"
+          element={
+            <ProtectedRoute requiredRole="user,manager,admin">
+              <FlightsPage />
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
     </>
   );
