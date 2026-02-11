@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthPage } from "./pages/AuthPage";
 import { IAuthAPI } from "./api/auth/IAuthAPI";
@@ -11,17 +11,26 @@ import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import FlightsPage from "./pages/FlightsPage";
 import { FlightCreationPage } from "./pages/FlightCreationPage";
+import { DashboardNavbar } from "./components/dashboard/navbar/Navbar";
+import { useAuth } from "./hooks/useAuthHook";
 
 const auth_api: IAuthAPI = new AuthAPI();
 const user_api: IUserAPI = new UserAPI();
 
 function App() {
+  const { user } = useAuth();
+  const location = useLocation();
+
   useEffect(() => {
     console.log("App rendered");
   }, []);
 
+  // Show navbar on all routes except auth page
+  const showNavbar = user && location.pathname !== "/";
+
   return (
     <>
+      {showNavbar && <DashboardNavbar userAPI={user_api} />}
       <Routes>
         <Route path="/" element={<AuthPage authAPI={auth_api} />} />
         <Route

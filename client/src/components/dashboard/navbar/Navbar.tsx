@@ -45,16 +45,19 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
   };
 
   return (
-    <nav className="titlebar" style={{ height: "60px", borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+    <nav className="titlebar" style={{ height: "60px", borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", position: "sticky", top: 0, zIndex: 1000, backgroundColor: "var(--win11-bg-primary)" }}>
       {/* Navigation Links */}
       <div className="flex items-center gap-4">
+
+        {/* Dashboard
         <button
           onClick={() => navigate("/dashboard")}
           className="btn btn-ghost"
           style={{ padding: "8px 16px", fontSize: "13px" }}
         >
           Dashboard
-        </button>
+        </button> */}
+        
         <button
           onClick={() => navigate("/flights")}
           className="btn btn-ghost"
