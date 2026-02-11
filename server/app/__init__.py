@@ -1,7 +1,7 @@
 import os
-
+from app.WebSockets.events import register_socketio_events
 from flask import Flask, send_from_directory
-from app.Extensions import db, jwt, cors
+from app.Extensions import db, jwt, cors, socketio
 from app.API.auth import auth_bp
 from app.API.users import users_bp
 from app.API.flights import flights_bp
@@ -25,6 +25,14 @@ def create_app():
         allow_headers=["Authorization", "Content-Type"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
+    socketio.init_app(
+        app, 
+        cors_allowed_origins="*",
+        async_mode='eventlet',
+        logger=True,
+        engineio_logger=True
+    )
+    register_socketio_events(socketio)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(users_bp)

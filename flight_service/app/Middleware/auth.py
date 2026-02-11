@@ -33,15 +33,21 @@ def admin_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         try:
+            print("admin_required: Verifying JWT...")
             verify_jwt_in_request()
             claims = get_jwt()
+            print(f"admin_required: Got claims: {claims}")
             role = claims.get("role")
+            print(f"admin_required: Role extracted: {role}")
             
             if role != "ADMIN":
+                print(f"admin_required: User is not ADMIN (role={role})")
                 return jsonify({"error": "Admin access required"}), 403
             
+            print("admin_required: JWT verification successful, user is ADMIN")
             return fn(*args, **kwargs)
         except Exception as e:
+            print(f"admin_required: Exception during JWT verification: {str(e)}")
             return jsonify({"error": "Invalid or missing token"}), 401
     return wrapper
 

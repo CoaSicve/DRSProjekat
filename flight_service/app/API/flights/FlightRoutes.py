@@ -31,7 +31,6 @@ def create_flight():
     try:
         data = request.get_json()
         dto = CreateFlightDTO(**data)
-        
         user = get_current_user()
         if user["role"] != "MANAGER":
             return jsonify({"error": "Only MANAGER can create flights"}), 403
@@ -83,7 +82,9 @@ def cancel_flight(flight_id: int):
 def delete_flight(flight_id: int):
     """Brisanje leta - SAMO ZA ADMIN"""
     try:
+        print(f"Delete request for flight_id: {flight_id}")
         FlightService.delete_flight(flight_id)
         return jsonify({"message": "Flight deleted successfully"}), 200
     except ValueError as e:
+        print(f"Delete error: {str(e)}")
         return jsonify({"error": str(e)}), 404
