@@ -253,9 +253,9 @@ export const AdminUsersPage: React.FC = () => {
                           cursor: "pointer",
                         }}
                       >
-                        <option value="">Select role...</option>
-                        <option value="USER">USER</option>
-                        <option value="MANAGER">MANAGER</option>
+                        <option value="" style={{ color: "black" }}>Select role...</option>
+                        <option value="USER" style={{ color: "black" }}>USER</option>
+                        <option value="MANAGER" style={{ color: "black" }}>MANAGER</option>
                       </select>
                     ) : (
                       <span
