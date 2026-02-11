@@ -34,7 +34,7 @@ CREATE DATABASE IF NOT EXISTS drs_flights_db;
 
 USE drs_flights_db;
 
-CREATE TABLE airlines (
+CREATE TABLE IF NOT EXISTS airlines (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     code VARCHAR(10) NOT NULL UNIQUE,
@@ -47,7 +47,7 @@ INSERT INTO airlines (name, code, country) VALUES
 ('Air Serbia', 'ASE4246HJI', 'Serbia'),
 ('Emirates', 'NUJS42108Z', 'United Arab Emirates');
 
-CREATE TABLE flights (
+CREATE TABLE IF NOT EXISTS flights (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,

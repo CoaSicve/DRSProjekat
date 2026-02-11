@@ -80,6 +80,15 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
             Manage Users
           </button>
         )}
+        {authUser?.role === "MANAGER" && (
+          <button
+            onClick={() => navigate("/create-flight")}
+            className="btn btn-ghost"
+            style={{ padding: "8px 16px", fontSize: "13px" }}
+          >
+            Create Flight
+          </button>
+        )}
       </div>
 
       {/* Profil */}

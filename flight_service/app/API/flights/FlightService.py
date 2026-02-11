@@ -40,28 +40,33 @@ class FlightService:
             ticket_price=dto.ticket_price,
             status=FlightStatus.PENDING
         )
-        
         db.session.add(flight)
         db.session.commit()
 
-        # Email manageru koji je kreirao
-        EmailService.send(
-            to=user_email,
-            subject="✈️ Novi let kreiran",
-            body=flight_created_body(flight)
-        )
+        print(f"Flight created with ID: {flight.id} by user {created_by_user_id}")
         
-        # WebSocket - Obavesti sve ADMIN-e da ima novi let za approve
-        socketio.emit("flight_pending_approval", {
-            "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value,
-            "created_by": created_by_user_id,
-            "airline": airline.name,
-            "departure": flight.departure_airport,
-            "arrival": flight.arrival_airport,
-            "departure_time": str(flight.departure_time)
-        }, room="role_ADMIN")  # 🔥 Samo ADMIN-i
+        try:
+            EmailService.send(
+                to=user_email,
+                subject="✈️ Novi let kreiran",
+                body=flight_created_body(flight)
+            )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+        
+        try:
+            socketio.emit("flight_pending_approval", {
+                "id": flight.id,
+                "name": flight.name,
+                "status": flight.status.value,
+                "created_by": created_by_user_id,
+                "airline": airline.name,
+                "departure": flight.departure_airport,
+                "arrival": flight.arrival_airport,
+                "departure_time": str(flight.departure_time)
+            }, room="role_ADMIN")
+        except Exception as e:
+            print(f"Failed to emit WebSocket event: {e}")
         
         return FlightService._to_dto(flight)
     
@@ -75,26 +80,29 @@ class FlightService:
         flight.status = FlightStatus.APPROVED
         db.session.commit()
 
-        # Email adminu koji je odobrio
-        EmailService.send(
-            to=admin_email,
-            subject="✅ Let odobren",
-            body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
-        )
+        try:
+            EmailService.send(
+                to=admin_email,
+                subject="✅ Let odobren",
+                body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
+            )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
         
-        # WebSocket - Obavesti MANAGER-a da je let odobren
-        socketio.emit("flight_approved", {
-            "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value
-        }, room="role_MANAGER")  # Samo MANAGER-i
-        
-        # Obavesti i sve korisnike (javni event)
-        socketio.emit("flight_status_changed", {
-            "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value
-        })  # Broadcast svima
+        try:
+            socketio.emit("flight_approved", {
+                "id": flight.id,
+                "name": flight.name,
+                "status": flight.status.value
+            }, room="role_MANAGER")
+            
+            socketio.emit("flight_status_changed", {
+                "id": flight.id,
+                "name": flight.name,
+                "status": flight.status.value
+            })
+        except Exception as e:
+            print(f"Failed to emit WebSocket event: {e}")
         
         return FlightService._to_dto(flight)
     
@@ -109,25 +117,29 @@ class FlightService:
         flight.rejection_reason = reason
         db.session.commit()
 
-        # Email adminu
-        EmailService.send(
-            to=admin_email,
-            subject="❌ Let odbijen",
-            body=flight_status_changed_body(
-                flight,
-                getattr(old_status, "value", old_status),
-                flight.status.value,
-                reason=reason
+        try:
+            EmailService.send(
+                to=admin_email,
+                subject="❌ Let odbijen",
+                body=flight_status_changed_body(
+                    flight,
+                    getattr(old_status, "value", old_status),
+                    flight.status.value,
+                    reason=reason
+                )
             )
-        )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
         
-        # WebSocket - Obavesti MANAGER-a da je let odbijen
-        socketio.emit("flight_rejected", {
-            "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value,
-            "reason": reason
-        }, room="role_MANAGER")  # Samo MANAGER-i
+        try:
+            socketio.emit("flight_rejected", {
+                "id": flight.id,
+                "name": flight.name,
+                "status": flight.status.value,
+                "reason": reason
+            }, room="role_MANAGER")
+        except Exception as e:
+            print(f"Failed to emit WebSocket event: {e}")
         
         return FlightService._to_dto(flight)
     
@@ -144,19 +156,23 @@ class FlightService:
         flight.status = FlightStatus.CANCELLED
         db.session.commit()
 
-        # Email adminu
-        EmailService.send(
-            to=admin_email,
-            subject="🛑 Let otkazan",
-            body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
-        )
+        try:
+            EmailService.send(
+                to=admin_email,
+                subject="🛑 Let otkazan",
+                body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
+            )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
         
-        # WebSocket - Broadcast svima
-        socketio.emit("flight_cancelled", {
-            "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value
-        })  # Svima jer utice na korisnike koji su kupili kartu
+        try:
+            socketio.emit("flight_cancelled", {
+                "id": flight.id,
+                "name": flight.name,
+                "status": flight.status.value
+            })
+        except Exception as e:
+            print(f"Failed to emit WebSocket event: {e}")
         
         return FlightService._to_dto(flight)
     

@@ -10,6 +10,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import FlightsPage from "./pages/FlightsPage";
+import { FlightCreationPage } from "./pages/FlightCreationPage";
 
 const auth_api: IAuthAPI = new AuthAPI();
 const user_api: IUserAPI = new UserAPI();
@@ -57,6 +58,14 @@ function App() {
           }
         />
 
+        <Route
+          path="/create-flight"
+          element={
+            <ProtectedRoute requiredRole="admin,manager">
+              <FlightCreationPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

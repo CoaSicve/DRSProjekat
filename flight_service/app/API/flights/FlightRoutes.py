@@ -33,10 +33,9 @@ def create_flight():
         dto = CreateFlightDTO(**data)
         
         user = get_current_user()
-        
         if user["role"] != "MANAGER":
             return jsonify({"error": "Only MANAGER can create flights"}), 403
-        
+        print("test4")
         flight = FlightService.create_flight(dto, user["user_id"], user["email"])
         return jsonify(flight.model_dump()), 201
     except ValidationError as e:
