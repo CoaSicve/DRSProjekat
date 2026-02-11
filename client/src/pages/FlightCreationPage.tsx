@@ -270,9 +270,9 @@ export const FlightCreationPage: React.FC = () => {
                   fontSize: "14px",
                 }}
               >
-                <option value={0}>Select an airline...</option>
+                <option value={0} style={{ color: "black" }}>Select an airline...</option>
                 {airlines.map((airline) => (
-                  <option key={airline.id} value={airline.id}>
+                  <option key={airline.id} value={airline.id} style={{ color: "black" }}>
                     {airline.name} ({airline.code})
                   </option>
                 ))}
