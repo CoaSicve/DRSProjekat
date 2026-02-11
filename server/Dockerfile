@@ -12,6 +12,7 @@ RUN pip install werkzeug
 RUN pip install gunicorn
 RUN pip install pymysql
 RUN pip install cryptography
+RUN pip install python-dotenv
 
 COPY . .
 

@@ -8,4 +8,5 @@ Cors
 werkzeug.security
 python-dotenv
 requests
-flask_sockertio
+flask_socketio
+python-dotenv
