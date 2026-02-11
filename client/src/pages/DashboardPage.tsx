@@ -1,6 +1,5 @@
 import { IUserAPI } from "../api/users/IUserAPI";
 import React from "react";
-import { DashboardNavbar } from "../components/dashboard/navbar/Navbar";
 
 type DashboardPageProps = {
     userAPI: IUserAPI;
@@ -9,9 +8,8 @@ type DashboardPageProps = {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ userAPI }) => {
     return (
         <div className="dashboard-root">
-            {/* Top navbar */}
-            <DashboardNavbar userAPI={userAPI} />
-           
+            {/* Page content */}
+                <h1 className="text-2xl font-bold mb-4">Welcome to the Dashboard</h1>
         </div>
     );
 };

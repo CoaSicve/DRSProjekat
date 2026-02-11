@@ -21,7 +21,13 @@ def create_app():
     mail.init_app(app)
     jwt.init_app(app)
     cors.init_app(app)
-    socketio.init_app(app, cors_allowed_origins=app.config.get("SOCKETIO_CORS_ALLOWED_ORIGINS", "*"))
+    socketio.init_app(
+        app, 
+        cors_allowed_origins="*",
+        async_mode='eventlet',
+        logger=True,
+        engineio_logger=True
+    )
     register_socketio_events(socketio)
     
     app.register_blueprint(flights_bp)
