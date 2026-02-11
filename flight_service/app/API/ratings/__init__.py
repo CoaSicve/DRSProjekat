@@ -1,0 +1,1 @@
+from .RatingRoutes import rating_bp
