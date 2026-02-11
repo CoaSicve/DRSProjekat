@@ -23,8 +23,7 @@ class FlightService:
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def create_flight(dto: CreateFlightDTO, created_by_user_id: int, user_email: str):  # 🆕 dodato user_email
-        # Validate airline exists
+    def create_flight(dto: CreateFlightDTO, created_by_user_id: int, user_email: str):
         airline = Airline.query.get(dto.airline_id)
         if not airline:
             raise ValueError("Airline not found")
@@ -45,22 +44,29 @@ class FlightService:
         db.session.add(flight)
         db.session.commit()
 
-        # 🆕 Šalje email korisniku koji je kreirao let
+        # Email manageru koji je kreirao
         EmailService.send(
             to=user_email,
             subject="✈️ Novi let kreiran",
             body=flight_created_body(flight)
         )
         
-        socketio.emit("flight_created", {
+        # WebSocket - Obavesti sve ADMIN-e da ima novi let za approve
+        socketio.emit("flight_pending_approval", {
             "id": flight.id,
             "name": flight.name,
-            "status": flight.status.value if hasattr(flight.status, "value") else flight.status
-        })
+            "status": flight.status.value,
+            "created_by": created_by_user_id,
+            "airline": airline.name,
+            "departure": flight.departure_airport,
+            "arrival": flight.arrival_airport,
+            "departure_time": str(flight.departure_time)
+        }, room="role_ADMIN")  # 🔥 Samo ADMIN-i
+        
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def approve_flight(flight_id: int, admin_email: str):  # 🆕 dodato admin_email
+    def approve_flight(flight_id: int, admin_email: str):
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -69,17 +75,31 @@ class FlightService:
         flight.status = FlightStatus.APPROVED
         db.session.commit()
 
-        # 🆕 Šalje email adminu koji je odobrio
+        # Email adminu koji je odobrio
         EmailService.send(
             to=admin_email,
             subject="✅ Let odobren",
             body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
         )
         
+        # WebSocket - Obavesti MANAGER-a da je let odobren
+        socketio.emit("flight_approved", {
+            "id": flight.id,
+            "name": flight.name,
+            "status": flight.status.value
+        }, room="role_MANAGER")  # Samo MANAGER-i
+        
+        # Obavesti i sve korisnike (javni event)
+        socketio.emit("flight_status_changed", {
+            "id": flight.id,
+            "name": flight.name,
+            "status": flight.status.value
+        })  # Broadcast svima
+        
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def reject_flight(flight_id: int, reason: str, admin_email: str):  # 🆕 dodato admin_email
+    def reject_flight(flight_id: int, reason: str, admin_email: str):
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -89,7 +109,7 @@ class FlightService:
         flight.rejection_reason = reason
         db.session.commit()
 
-        # 🆕 Šalje email adminu koji je odbio
+        # Email adminu
         EmailService.send(
             to=admin_email,
             subject="❌ Let odbijen",
@@ -101,10 +121,18 @@ class FlightService:
             )
         )
         
+        # WebSocket - Obavesti MANAGER-a da je let odbijen
+        socketio.emit("flight_rejected", {
+            "id": flight.id,
+            "name": flight.name,
+            "status": flight.status.value,
+            "reason": reason
+        }, room="role_MANAGER")  # Samo MANAGER-i
+        
         return FlightService._to_dto(flight)
     
     @staticmethod
-    def cancel_flight(flight_id: int, admin_email: str):  # 🆕 dodato admin_email
+    def cancel_flight(flight_id: int, admin_email: str):
         flight = Flight.query.get(flight_id)
         if not flight:
             raise ValueError("Flight not found")
@@ -116,12 +144,19 @@ class FlightService:
         flight.status = FlightStatus.CANCELLED
         db.session.commit()
 
-        # 🆕 Šalje email adminu koji je otkazao
+        # Email adminu
         EmailService.send(
             to=admin_email,
             subject="🛑 Let otkazan",
             body=flight_status_changed_body(flight, getattr(old_status, "value", old_status), flight.status.value)
         )
+        
+        # WebSocket - Broadcast svima
+        socketio.emit("flight_cancelled", {
+            "id": flight.id,
+            "name": flight.name,
+            "status": flight.status.value
+        })  # Svima jer utice na korisnike koji su kupili kartu
         
         return FlightService._to_dto(flight)
     
@@ -134,10 +169,10 @@ class FlightService:
         db.session.delete(flight)
         db.session.commit()
 
+        # WebSocket
         socketio.emit("flight_deleted", {
             "id": flight.id,
-            "name": flight.name,
-            "status": flight.status.value if hasattr(flight.status, "value") else flight.status
+            "name": flight.name
         })
     
     @staticmethod

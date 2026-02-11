@@ -25,15 +25,17 @@ def get_flight(flight_id: int):
         return jsonify({"error": str(e)}), 404
 
 @flights_bp.route("", methods=["POST"])
-@manager_or_admin_required  # 🆕 Zahteva MANAGER ili ADMIN
+@jwt_required_custom 
 def create_flight():
-    """Kreiranje leta - samo za MANAGER ili ADMIN"""
+    """Kreiranje leta - SAMO ZA MANAGER"""
     try:
         data = request.get_json()
         dto = CreateFlightDTO(**data)
         
-        # 🆕 Izvlači user_id i email iz JWT tokena
         user = get_current_user()
+        
+        if user["role"] != "MANAGER":
+            return jsonify({"error": "Only MANAGER can create flights"}), 403
         
         flight = FlightService.create_flight(dto, user["user_id"], user["email"])
         return jsonify(flight.model_dump()), 201
@@ -43,9 +45,9 @@ def create_flight():
         return jsonify({"error": str(e)}), 400
 
 @flights_bp.route("/<int:flight_id>/approve", methods=["PUT"])
-@admin_required  # 🆕 Zahteva ADMIN
+@admin_required  # Samo ADMIN
 def approve_flight(flight_id: int):
-    """Odobravanje leta - samo za ADMIN"""
+    """Odobravanje leta - SAMO ZA ADMIN"""
     try:
         user = get_current_user()
         flight = FlightService.approve_flight(flight_id, user["email"])
@@ -54,9 +56,9 @@ def approve_flight(flight_id: int):
         return jsonify({"error": str(e)}), 404
 
 @flights_bp.route("/<int:flight_id>/reject", methods=["PUT"])
-@admin_required  # 🆕 Zahteva ADMIN
+@admin_required  # Samo ADMIN
 def reject_flight(flight_id: int):
-    """Odbijanje leta - samo za ADMIN"""
+    """Odbijanje leta - SAMO ZA ADMIN"""
     try:
         data = request.get_json()
         reason = data.get("reason", "No reason provided")
@@ -67,9 +69,9 @@ def reject_flight(flight_id: int):
         return jsonify({"error": str(e)}), 404
 
 @flights_bp.route("/<int:flight_id>/cancel", methods=["PUT"])
-@admin_required  # 🆕 Zahteva ADMIN
+@admin_required  # Samo ADMIN
 def cancel_flight(flight_id: int):
-    """Otkazivanje leta - samo za ADMIN"""
+    """Otkazivanje leta - SAMO ZA ADMIN"""
     try:
         user = get_current_user()
         flight = FlightService.cancel_flight(flight_id, user["email"])
@@ -78,9 +80,9 @@ def cancel_flight(flight_id: int):
         return jsonify({"error": str(e)}), 404
 
 @flights_bp.route("/<int:flight_id>", methods=["DELETE"])
-@admin_required  # 🆕 Zahteva ADMIN
+@admin_required  #  Samo ADMIN
 def delete_flight(flight_id: int):
-    """Brisanje leta - samo za ADMIN"""
+    """Brisanje leta - SAMO ZA ADMIN"""
     try:
         FlightService.delete_flight(flight_id)
         return jsonify({"message": "Flight deleted successfully"}), 200

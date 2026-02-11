@@ -37,8 +37,24 @@ def admin_required(fn):
             claims = get_jwt()
             role = claims.get("role")
             
-            if role not in ["ADMIN"]:
+            if role != "ADMIN":
                 return jsonify({"error": "Admin access required"}), 403
+            
+            return fn(*args, **kwargs)
+        except Exception as e:
+            return jsonify({"error": "Invalid or missing token"}), 401
+    return wrapper
+
+def manager_required(fn):  # 🆕 DODATO
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            verify_jwt_in_request()
+            claims = get_jwt()
+            role = claims.get("role")
+            
+            if role != "MANAGER":
+                return jsonify({"error": "Manager access required"}), 403
             
             return fn(*args, **kwargs)
         except Exception as e:

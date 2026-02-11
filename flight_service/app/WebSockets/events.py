@@ -10,6 +10,34 @@ def register_socketio_events(socketio):
     def handle_disconnect():
         pass
 
+    @socketio.on("join_role_room")  # Novi event
+    def handle_join_role(data):
+        """
+        Frontend šalje: { "role": "ADMIN" }
+        Korisnik se pridružuje room-u za svoju rolu
+        """
+        role = data.get("role")
+        if not role:
+            emit("error", {"message": "Role is required"})
+            return
+        
+        room = f"role_{role}"  # npr. "role_ADMIN", "role_MANAGER"
+        join_room(room)
+        emit("joined_room", {"room": room, "role": role})
+        print(f"User joined room: {room}")
+
+    @socketio.on("leave_role_room")  # Novi event
+    def handle_leave_role(data):
+        role = data.get("role")
+        if not role:
+            emit("error", {"message": "Role is required"})
+            return
+        
+        room = f"role_{role}"
+        leave_room(room)
+        emit("left_room", {"room": room, "role": role})
+
+    # Zadržavamo postojeće za kompatibilnost
     @socketio.on("join")
     def handle_join(data):
         room = data.get("room")
