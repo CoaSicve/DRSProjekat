@@ -55,4 +55,21 @@ export class UserAPI implements IUserAPI {
       )
     ).data;
   }
+
+  async uploadProfileImage(token: string, id: number, file: File): Promise<UserDTO> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return (
+      await this.axiosInstance.post<UserDTO>(
+        `/users/${id}/profile-image`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      )
+    ).data;
+  }
   }

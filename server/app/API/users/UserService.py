@@ -70,9 +70,15 @@ class UserService:
             id=user.id,
             name=user.name,
             lastName=user.lastName,
+            gender=user.gender,
             email=user.email,
             role=user.role.value,
-            profileImage=user.profileImage
+            street=user.street,
+            profileImage=user.profileImage,
+            state=user.state,
+            number=user.number,
+            dateOfBirth=user.dateOfBirth.isoformat() if user.dateOfBirth else None,
+            accountBalance=user.accountBalance
         )
 
     @staticmethod

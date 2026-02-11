@@ -23,6 +23,14 @@ export const UserProfilePage: React.FC = () => {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string>("");
   const { token, user: authUser } = useAuth();
+  const serverBase = import.meta.env.VITE_GATEWAY_URL.replace(/\/api\/v1$/, "");
+
+  const resolveImageUrl = (url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    return `${serverBase}${url}`;
+  };
 
   useEffect(() => {
     if (token && authUser) {
@@ -46,7 +54,7 @@ export const UserProfilePage: React.FC = () => {
         number: userData.number || "",
       });
       if (userData.profileImage) {
-        setPreviewImage(userData.profileImage);
+        setPreviewImage(resolveImageUrl(userData.profileImage));
       }
     } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to load profile");
@@ -90,19 +98,20 @@ export const UserProfilePage: React.FC = () => {
         ])
       );
 
+      const updatedUser = await updateProfile(dataToSave);
+
       if (profileImage) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const base64Image = event.target?.result as string;
-          const profileDataWithImage = {
-            ...dataToSave,
-            profileImage: base64Image,
-          };
-          await updateProfile(profileDataWithImage);
-        };
-        reader.readAsDataURL(profileImage);
+        const userWithImage = await userAPI.uploadProfileImage(
+          token!,
+          authUser!.id,
+          profileImage
+        );
+        setUser(userWithImage);
+        if (userWithImage.profileImage) {
+          setPreviewImage(resolveImageUrl(userWithImage.profileImage));
+        }
       } else {
-        await updateProfile(dataToSave);
+        setUser(updatedUser);
       }
     } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to save profile");
@@ -117,10 +126,10 @@ export const UserProfilePage: React.FC = () => {
       authUser!.id,
       data
     );
-    setUser(updatedUser);
     setSuccess("Profile updated successfully!");
     setProfileImage(null);
     setTimeout(() => setSuccess(""), 3000);
+    return updatedUser;
   };
 
   if (loading) {
@@ -132,8 +141,30 @@ export const UserProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg flex flex-col items-center">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 16px",
+        background: "var(--win11-bg)",
+      }}
+    >
+      <div
+        style={{
+          width: "520px",
+          maxWidth: "92vw",
+          padding: "32px 28px",
+          borderRadius: "16px",
+          background: "var(--win11-card-bg)",
+          border: "1px solid var(--win11-divider)",
+          boxShadow: "var(--win11-shadow-medium)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <h1 className="text-3xl font-bold mb-6 text-center">My Profile</h1>
 
         {error && (
@@ -147,12 +178,24 @@ export const UserProfilePage: React.FC = () => {
           </div>
         )}
 <div className="mb-8 flex flex-col items-center">
-  <div className="w-24 h-24 border rounded-md flex items-center justify-center overflow-hidden bg-gray-100">
+  <div
+    style={{
+      width: "72px",
+      height: "72px",
+      borderRadius: "50%",
+      border: "1px solid var(--win11-divider)",
+      background: "rgba(255, 255, 255, 0.08)",
+      overflow: "hidden",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
     {previewImage ? (
       <img
         src={previewImage}
         alt="Profile"
-        className="max-w-full max-h-full object-contain"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
       />
     ) : (
       <span className="text-gray-500 text-xs text-center px-2">
@@ -161,24 +204,34 @@ export const UserProfilePage: React.FC = () => {
     )}
   </div>
 
-  <label
-    htmlFor="profileImage"
+  <button
+    onClick={() => document.getElementById("profileImage")?.click()}
     className="mt-3 cursor-pointer px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "12px", marginTop: "12px" }}
   >
-    Upload Image
-  </label>
+    {previewImage ? "Edit Profile Picture" : "Upload Image"}
+  </button>
 
   <input
     id="profileImage"
     type="file"
     accept="image/*"
     onChange={handleImageSelect}
-    className="hidden"
+    style={{ display: "none" }}
   />
 </div>
 
         {/* Form Fields */}
-        <div className="w-full max-w-md space-y-4">
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            columnGap: "20px",
+            rowGap: "18px",
+          }}
+        >
           <div>
             <label className="block text-sm font-medium mb-1">First Name</label>
             <input
@@ -272,7 +325,10 @@ export const UserProfilePage: React.FC = () => {
         </div>
 
         {/* Save Button */}
-        <div className="mt-6 w-full max-w-md flex justify-center">
+        <div
+          style={{ width: "50%", maxWidth: "420px", paddingTop: "30px" }}
+          className="mt-8 flex justify-center"
+        >
           <button
             onClick={handleSaveProfile}
             disabled={saving}

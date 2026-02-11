@@ -13,6 +13,14 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
   const [user, setUser] = useState<UserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const serverBase = import.meta.env.VITE_GATEWAY_URL.replace(/\/api\/v1$/, "");
+
+  const resolveImageUrl = (url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    return `${serverBase}${url}`;
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -76,7 +84,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
             {/* PFP */}
             {user.profileImage ? (
               <img
-                src={user.profileImage}
+                src={resolveImageUrl(user.profileImage)}
                 alt={user.name}
                 style={{
                   width: "32px",

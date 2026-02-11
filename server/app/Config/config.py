@@ -27,3 +27,6 @@ class Config:
         "CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",") if origin.strip()]
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(5 * 1024 * 1024)))
+    ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
