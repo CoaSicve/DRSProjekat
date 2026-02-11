@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "flight-service-secret")

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { FlightsAPI } from "../api/flights/FlightsAPI";
 import { FlightDTO } from "../models/flights/FlightDTO";
+
+const flightsAPI = new FlightsAPI();
 
 
 const fmtDate = (iso?: string) => {
@@ -18,9 +21,7 @@ const FlightsPage: React.FC = () => {
     let mounted = true;
     const fetchFlights = async () => {
       try {
-        const res = await fetch("/api/flights");
-        if (!res.ok) throw new Error(`Fetch error ${res.status}`);
-        const data = await res.json();
+        const data = await flightsAPI.getAllFlights();
         if (mounted) setFlights(data || []);
       } catch (err: any) {
         if (mounted) setError(err?.message || "Unknown error");

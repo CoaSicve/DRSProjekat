@@ -12,13 +12,6 @@ class Config:
         "mysql+pymysql://root:1234@db:3306/drs_users_db"
     )
     
-    SQLALCHEMY_BINDS = {
-        'flights_db': os.getenv(
-            "FLIGHTS_DATABASE_URL",
-            "mysql+pymysql://root:1234@db:3306/drs_flights_db"
-        )
-    }
-    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-jwt-secret-key-change-in-production")
