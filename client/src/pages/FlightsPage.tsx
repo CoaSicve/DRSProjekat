@@ -398,9 +398,9 @@ const FlightsPage: React.FC = () => {
               e.currentTarget.style.borderColor = "var(--win11-divider)";
             }}
           >
-            <option value="">All Airlines</option>
+            <option value="" style={{ color: "black" }}>All Airlines</option>
             {airlines.map((airline) => (
-              <option key={airline.id} value={airline.id}>
+              <option key={airline.id} value={airline.id} style={{ color: "black" }}>
                 {airline.name}
               </option>
             ))}
