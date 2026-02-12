@@ -84,13 +84,22 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userAPI }) => 
         </button>
         )}
         {authUser?.role === "ADMIN" && (
-          <button
-            onClick={() => navigate("/admin/users")}
-            className="btn btn-ghost"
-            style={{ padding: "8px 16px", fontSize: "13px" }}
-          >
-            Manage Users
-          </button>
+          <>
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="btn btn-ghost"
+              style={{ padding: "8px 16px", fontSize: "13px" }}
+            >
+              Manage Users
+            </button>
+            <button
+              onClick={() => navigate("/admin/reviews")}
+              className="btn btn-ghost"
+              style={{ padding: "8px 16px", fontSize: "13px" }}
+            >
+              Flight Reviews
+            </button>
+          </>
         )}
         {authUser?.role === "MANAGER" && (
           <button

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { PurchasesAPI } from "../api/purchases/PurchasesAPI";
 import { FlightsAPI } from "../api/flights/FlightsAPI";
+import { RatingsAPI } from "../api/ratings/RatingsAPI";
 import { useAuth } from "../hooks/useAuthHook";
 import { PurchaseDTO } from "../models/purchases/PurchaseDTO";
 import { FlightDTO } from "../models/flights/FlightDTO";
+import { RatingDTO } from "../models/ratings/RatingDTO";
 
 const purchasesAPI = new PurchasesAPI();
 const flightsAPI = new FlightsAPI();
+const ratingsAPI = new RatingsAPI();
 
 interface PurchasedFlight extends FlightDTO {
   purchase: PurchaseDTO;
@@ -37,12 +40,16 @@ const calculateTimeRemaining = (departureTime: string, durationMinutes: number):
 type FlightTab = "upcoming" | "ongoing" | "past";
 
 const MyFlightsPage: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, token } = useAuth();
   const [purchasedFlights, setPurchasedFlights] = useState<PurchasedFlight[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FlightTab>("upcoming");
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [ratings, setRatings] = useState<RatingDTO[]>([]);
+  const [ratingInputs, setRatingInputs] = useState<{ [flightId: number]: number }>({});
+  const [submittingRating, setSubmittingRating] = useState<number | null>(null);
+  const [cancellingPurchaseId, setCancellingPurchaseId] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +63,7 @@ const MyFlightsPage: React.FC = () => {
 
         const purchases = await purchasesAPI.getUserPurchases(authUser.id);
         const allFlights = await flightsAPI.getAllFlights();
+        const allRatings = await ratingsAPI.getAllRatings();
 
         const combined: PurchasedFlight[] = purchases
           .map((purchase) => {
@@ -64,7 +72,10 @@ const MyFlightsPage: React.FC = () => {
           })
           .filter(Boolean) as PurchasedFlight[];
 
-        if (mounted) setPurchasedFlights(combined);
+        if (mounted) {
+          setPurchasedFlights(combined);
+          setRatings(allRatings.filter((r) => r.user_id === authUser.id));
+        }
       } catch (err: any) {
         if (mounted) setError(err?.message || "Unknown error");
       } finally {
@@ -108,6 +119,68 @@ const MyFlightsPage: React.FC = () => {
 
   const { upcoming, ongoing, past } = categorizeFlights();
   const displayFlights = activeTab === "upcoming" ? upcoming : activeTab === "ongoing" ? ongoing : past;
+
+  const handleRatingSubmit = async (flightId: number) => {
+    if (!authUser?.id) return;
+    
+    const ratingValue = ratingInputs[flightId];
+    if (!ratingValue || ratingValue < 1 || ratingValue > 5) {
+      alert("Please select a rating between 1 and 5 stars");
+      return;
+    }
+
+    try {
+      setSubmittingRating(flightId);
+      const response = await ratingsAPI.createRating({
+        user_id: authUser.id,
+        flight_id: flightId,
+        rating: ratingValue,
+      });
+      
+      // Add the new rating to the list
+      const newRating: RatingDTO = {
+        id: response.rating_id,
+        user_id: authUser.id,
+        flight_id: flightId,
+        rating: ratingValue,
+        created_at: new Date().toISOString(),
+      };
+      setRatings((prev) => [...prev, newRating]);
+      // Clear the input
+      setRatingInputs((prev) => {
+        const newInputs = { ...prev };
+        delete newInputs[flightId];
+        return newInputs;
+      });
+    } catch (err: any) {
+      alert(err?.response?.data?.error || "Failed to submit rating");
+    } finally {
+      setSubmittingRating(null);
+    }
+  };
+
+  const handleCancelPurchase = async (purchaseId: number) => {
+    if (!authUser?.id) return;
+    try {
+      setCancellingPurchaseId(purchaseId);
+      const updatedPurchase = await purchasesAPI.cancelPurchase(purchaseId, token);
+      setPurchasedFlights((prev) =>
+        prev.map((item) =>
+          item.purchase.id === purchaseId
+            ? { ...item, purchase: { ...item.purchase, ...updatedPurchase } }
+            : item
+        )
+      );
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.message || "Failed to cancel purchase");
+    } finally {
+      setCancellingPurchaseId(null);
+    }
+  };
+
+  const getUserRatingForFlight = (flightId: number): RatingDTO | undefined => {
+    return ratings.find((r) => r.flight_id === flightId);
+  };
 
   if (loading) {
     return (
@@ -262,6 +335,12 @@ const MyFlightsPage: React.FC = () => {
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Ticket Price</th>
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Purchase Status</th>
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Purchased</th>
+                    {activeTab === "past" && (
+                      <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Rating</th>
+                    )}
+                    {activeTab !== "past" && (
+                      <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -317,6 +396,102 @@ const MyFlightsPage: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", color: "var(--win11-text-primary)", fontSize: "14px" }}>{fmtDate(item.purchase.purchase_time)}</td>
+                      {activeTab === "past" && (
+                        <td style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", fontSize: "14px" }}>
+                          {(() => {
+                            const existingRating = getUserRatingForFlight(item.id);
+                            if (existingRating) {
+                              return (
+                                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                  <span style={{ color: "#fbbf24", fontSize: "16px" }}>{"★".repeat(existingRating.rating)}</span>
+                                  <span style={{ color: "var(--win11-text-secondary)", fontSize: "16px" }}>{"☆".repeat(5 - existingRating.rating)}</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <select
+                                  value={ratingInputs[item.id] || ""}
+                                  onChange={(e) => setRatingInputs((prev) => ({ ...prev, [item.id]: parseInt(e.target.value) }))}
+                                  style={{
+                                    padding: "4px 8px",
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "1px solid var(--win11-divider)",
+                                    borderRadius: "4px",
+                                    color: "var(--win11-text-primary)",
+                                    fontSize: "13px",
+                                    cursor: "pointer",
+                                  }}
+                                  disabled={submittingRating === item.id}
+                                >
+                                  <option value="">Rate</option>
+                                  <option value="1">★☆☆☆☆</option>
+                                  <option value="2">★★☆☆☆</option>
+                                  <option value="3">★★★☆☆</option>
+                                  <option value="4">★★★★☆</option>
+                                  <option value="5">★★★★★</option>
+                                </select>
+                                <button
+                                  onClick={() => handleRatingSubmit(item.id)}
+                                  disabled={!ratingInputs[item.id] || submittingRating === item.id}
+                                  style={{
+                                    padding: "4px 12px",
+                                    background: ratingInputs[item.id] ? "var(--win11-accent)" : "rgba(255, 255, 255, 0.1)",
+                                    color: ratingInputs[item.id] ? "#000" : "var(--win11-text-secondary)",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    cursor: ratingInputs[item.id] ? "pointer" : "not-allowed",
+                                    transition: "all 0.2s ease",
+                                    opacity: submittingRating === item.id ? 0.6 : 1,
+                                  }}
+                                >
+                                  {submittingRating === item.id ? "..." : "Submit"}
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {activeTab !== "past" && (
+                        <td style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", fontSize: "14px" }}>
+                          <button
+                            onClick={() => handleCancelPurchase(item.purchase.id)}
+                            disabled={
+                              item.purchase.status === "CANCELLED" ||
+                              cancellingPurchaseId === item.purchase.id
+                            }
+                            style={{
+                              padding: "6px 12px",
+                              background:
+                                item.purchase.status === "CANCELLED"
+                                  ? "rgba(239, 68, 68, 0.15)"
+                                  : "rgba(239, 68, 68, 0.9)",
+                              color:
+                                item.purchase.status === "CANCELLED"
+                                  ? "#ef4444"
+                                  : "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              cursor:
+                                item.purchase.status === "CANCELLED"
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: cancellingPurchaseId === item.purchase.id ? 0.6 : 1,
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            {item.purchase.status === "CANCELLED"
+                              ? "Cancelled"
+                              : cancellingPurchaseId === item.purchase.id
+                              ? "Cancelling..."
+                              : "Cancel"}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

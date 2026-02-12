@@ -19,4 +19,9 @@ export class PurchasesAPI implements IPurchasesAPI {
   async getUserPurchases(userId: number): Promise<PurchaseDTO[]> {
     return (await this.axiosInstance.get<PurchaseDTO[]>(`/purchases/${userId}`)).data;
   }
+
+  async cancelPurchase(purchaseId: number, token?: string | null): Promise<PurchaseDTO> {
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+    return (await this.axiosInstance.put<PurchaseDTO>(`/purchases/${purchaseId}/cancel`, null, config)).data;
+  }
 }

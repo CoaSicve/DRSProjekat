@@ -8,6 +8,7 @@ import { IUserAPI } from "./api/users/IUserAPI";
 import { ProtectedRoute } from "./components/protected_route/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { AdminReviewsPage } from "./pages/AdminReviewsPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import FlightsPage from "./pages/FlightsPage";
 import MyFlightsPage from "./pages/MyFlightsPage";
@@ -47,6 +48,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reviews"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminReviewsPage />
             </ProtectedRoute>
           }
         />
