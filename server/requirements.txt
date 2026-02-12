@@ -10,3 +10,6 @@ python-dotenv
 requests
 flask_socketio
 python-dotenv
+
+Flask-SocketIO==5.3.7
+eventlet==0.36.1

@@ -13,8 +13,10 @@ RUN pip install gunicorn
 RUN pip install pymysql
 RUN pip install cryptography
 RUN pip install python-dotenv
+RUN pip install flask-socketio
+RUN pip install Flask-SocketIO==5.3.7 eventlet==0.36.1
 
 COPY . .
 
 EXPOSE 5000
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app.main:app"]
+CMD ["gunicorn", "-k", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "--timeout", "120", "app.main:app"]

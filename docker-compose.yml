@@ -32,6 +32,15 @@ services:
     environment:
       FLASK_ENV: development
       DATABASE_URL: mysql+pymysql://root:1234@db:3306/drs_users_db
+      FLIGHT_SERVICE_URL: http://flight_service:5000
+      
+      MAIL_SERVER: smtp.gmail.com
+      MAIL_PORT: "587"
+      MAIL_USE_TLS: "true"
+      MAIL_USERNAME: gorangrcic76@gmail.com
+      MAIL_PASSWORD: "yryo fukt htgm rfdp"
+      MAIL_DEFAULT_SENDER: gorangrcic76@gmail.com
+      MAIL_ENABLED: "true"
     depends_on:
       db:
         condition: service_healthy

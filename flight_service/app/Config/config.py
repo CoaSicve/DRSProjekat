@@ -32,3 +32,5 @@ class Config:
 
     # SocketIO
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.getenv("SOCKETIO_CORS_ALLOWED_ORIGINS", "*")
+
+    SERVER_URL = os.getenv("SERVER_URL", "http://server:5000")

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from pydantic import ValidationError
 from app.API.flights.FlightService import FlightService
 from app.Domain.DTOs.FlightDTO import CreateFlightDTO
@@ -67,13 +67,26 @@ def reject_flight(flight_id: int):
         return jsonify({"error": str(e)}), 404
 
 @flights_bp.route("/<int:flight_id>/cancel", methods=["PUT"])
-@admin_required  # Samo ADMIN
+@admin_required
 def cancel_flight(flight_id: int):
-    """Otkazivanje leta - SAMO ZA ADMIN"""
     try:
+
         user = get_current_user()
-        flight = FlightService.cancel_flight(flight_id, user["email"])
+
+        auth_header = request.headers.get("Authorization", "")
+        token = auth_header.replace("Bearer ", "").strip()
+
+        server_base_url = current_app.config.get("SERVER_URL")
+
+        flight = FlightService.cancel_flight(
+            flight_id,
+            user["email"],
+            token,
+            server_base_url
+        )
+
         return jsonify(flight.model_dump()), 200
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
 

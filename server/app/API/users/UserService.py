@@ -6,6 +6,8 @@ from app.Extensions import db
 from app.Domain.models.User import User
 from app.Domain.DTOs import UserDTO
 from app.Domain.enums.UserRole import UserRole
+from app.Services.EmailService import EmailService
+from app.Services.UserMailTemplates import role_changed_body
 
 class UserService:
 
@@ -37,11 +39,25 @@ class UserService:
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
+        old_role = user.role.value  # pre promene
+
         try:
             user.role = UserRole[role.upper()]
             db.session.commit()
+
+            # posalji mail o promeni role
+            try:
+                EmailService.send(
+                    to=user.email,
+                    subject="🔔 Promenjena uloga na nalogu",
+                    body=role_changed_body(user.name, old_role, user.role.value)
+                )
+            except Exception as e:
+                print(f"Failed to send role change email: {e}")
+
             return UserService._to_dto(user)
+
         except KeyError:
             raise ValueError(f"Invalid role: {role}")
 
