@@ -17,7 +17,7 @@ class PurchaseService:
         purchase = Purchase(
             user_id=user_id,
             flight_id=flight_id,
-            ticket_price=Flight.ticket_price,
+            ticket_price=flight.ticket_price,
             status=PurchaseStatus.IN_PROGRESS
         )
         db.session.add(purchase)
