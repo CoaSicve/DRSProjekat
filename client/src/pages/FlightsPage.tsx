@@ -265,6 +265,10 @@ const FlightsPage: React.FC = () => {
     }
   };
 
+  
+  const { user: authUser } = useAuth();
+  const [purchaseMsg, setPurchaseMsg] = useState<string | null>(null);
+  const [isPurchasing, setIsPurchasing] = useState<number | null>(null);
   if (loading) {
     return (
       <div
@@ -505,6 +509,7 @@ const FlightsPage: React.FC = () => {
                     {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
                       <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Actions</th>
                     )}
+                    <th style={{ border: "1px solid var(--win11-diviner)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -780,6 +785,49 @@ const FlightsPage: React.FC = () => {
                           )}
                         </td>
                       )}
+                      <td style={{border: "1px solid var(--win11-divider)", padding: "12px 16px", color: "var(--win11-text-primary)", fontSize: "14px"}}>
+
+                        {f.status === "APPROVED" ? (
+                          <button
+                          disabled={isPurchasing === f.id}
+                          onClick={async () => {
+                            if (!authUser?.id){
+                              setPurchaseMsg("Morate biti ulogovani");
+                              return;
+                            }
+                            try{
+                              setIsPurchasing(f.id);
+                              setPurchaseMsg(null);
+                              console.log("Sending", { user_id: authUser?.id, flight_id: f.id });
+                              const res = await purchasesAPI.createPurchase({
+                                user_id: authUser.id,
+                                flight_id: f.id,
+                              });
+                              setPurchaseMsg('Kupovina zapoceta! ID ${res.purchase_id}, status ${res.status}');
+                            } catch (err: any){
+                              setPurchaseMsg('Kupovina neuspesna: ${err.response?.data?.error || err.message}');
+                            } finally {
+                              setIsPurchasing(null);
+                            }
+                          }}
+                          style={{
+                            background: "#2563eb",
+                            color: "#fff",
+                            padding: "6px 12px",
+                            borderRadius: "4px",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: "13px", 
+                          }}
+                          >
+                            {isPurchasing === f.id ? "Processing..." : "Buy Ticket"}
+                          </button>
+                        ) : (
+                          <span style={{color: "#9ca3af", fontSize: "13px"}}></span>
+                        )
+                      }
+                      
+                      </td>
                     </tr>
                   ))}
                 </tbody>
