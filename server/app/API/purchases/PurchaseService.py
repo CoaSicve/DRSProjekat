@@ -6,7 +6,7 @@ class PurchaseService:
 
     @staticmethod
     def _get_base_url():
-        return current_app.config.get("FLIGHT_SERVICE_URL", "http://localhost:5051")
+        return current_app.config.get("FLIGHT_SERVICE_URL", "http://localhost:5050")
 
     @staticmethod
     def create_purchase(data: dict):

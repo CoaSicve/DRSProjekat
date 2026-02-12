@@ -509,7 +509,7 @@ const FlightsPage: React.FC = () => {
                     {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
                       <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Actions</th>
                     )}
-                    <th style={{ border: "1px solid var(--win11-diviner)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Action</th>
+                    <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Purchase</th>
                   </tr>
                 </thead>
                 <tbody>
