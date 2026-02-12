@@ -33,6 +33,6 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    FlightStatusWatcher.start(interval_seconds=5)
+    FlightStatusWatcher.start(app, interval_seconds=2)
     
     return app

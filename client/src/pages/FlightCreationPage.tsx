@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FlightsAPI } from "../api/flights/FlightsAPI";
 import { AirlinesAPI } from "../api/airlines/AirlinesAPI";
 import { AirlineDTO } from "../models/flights/AirlineDTO";
-import { CreateFlightDTO } from "../models/flights/FlightDTO";
+import { CreateFlightDTO, FlightDTO } from "../models/flights/FlightDTO";
 import { useAuth } from "../hooks/useAuthHook";
 
 const flightsAPI = new FlightsAPI();
@@ -12,6 +12,7 @@ const airlinesAPI = new AirlinesAPI();
 export const FlightCreationPage: React.FC = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [airlines, setAirlines] = useState<AirlineDTO[]>([]);
   const [loadingAirlines, setLoadingAirlines] = useState(true);
@@ -29,6 +30,40 @@ export const FlightCreationPage: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [creating, setCreating] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState<string>("");
+  const [editingFlightId, setEditingFlightId] = useState<number | null>(null);
+
+  const toDatetimeLocal = (value: string) => {
+    if (!value) return "";
+    if (value.includes("T")) {
+      return value.slice(0, 16);
+    }
+    if (value.includes(" ")) {
+      return value.replace(" ", "T").slice(0, 16);
+    }
+    return value;
+  };
+
+  useEffect(() => {
+    const state = location.state as { flight?: FlightDTO; rejectionReason?: string } | null;
+    if (!state?.flight) {
+      return;
+    }
+
+    const flight = state.flight;
+    setFormData({
+      name: flight.name || "",
+      airline_id: flight.airline_id || 0,
+      distance_km: flight.distance_km || 0,
+      duration_minutes: flight.duration_minutes || 0,
+      departure_time: toDatetimeLocal(flight.departure_time || ""),
+      departure_airport: flight.departure_airport || "",
+      arrival_airport: flight.arrival_airport || "",
+      ticket_price: flight.ticket_price || 0,
+    });
+    setRejectionReason(state.rejectionReason || flight.rejection_reason || "");
+    setEditingFlightId(flight.id);
+  }, [location.state]);
 
   useEffect(() => {
     const fetchAirlines = async () => {
@@ -111,8 +146,13 @@ export const FlightCreationPage: React.FC = () => {
         departure_time: departureDateTime,
       };
 
-      await flightsAPI.createFlight(token!, flightData);
-      setSuccess("Flight created successfully!");
+      if (editingFlightId) {
+        await flightsAPI.updateFlight(token!, editingFlightId, flightData);
+        setSuccess("Flight updated and sent for approval!");
+      } else {
+        await flightsAPI.createFlight(token!, flightData);
+        setSuccess("Flight created successfully!");
+      }
       setTimeout(() => {
         navigate("/flights");
       }, 2000);
@@ -170,8 +210,24 @@ export const FlightCreationPage: React.FC = () => {
             color: "var(--win11-text-primary)",
           }}
         >
-          Create New Flight
+          {editingFlightId ? "Edit Flight" : "Create New Flight"}
         </h1>
+
+        {rejectionReason && (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px",
+              background: "rgba(234, 179, 8, 0.12)",
+              border: "1px solid rgba(234, 179, 8, 0.4)",
+              borderRadius: "8px",
+              color: "#eab308",
+              textAlign: "center",
+            }}
+          >
+            Rejection reason: {rejectionReason}
+          </div>
+        )}
 
         {error && (
           <div
@@ -490,7 +546,7 @@ export const FlightCreationPage: React.FC = () => {
                   e.currentTarget.style.background = "rgba(96, 205, 255, 0.8)";
               }}
             >
-              {creating ? "Creating..." : "Create Flight"}
+              {creating ? "Saving..." : editingFlightId ? "Save Changes" : "Create Flight"}
             </button>
 
             <button

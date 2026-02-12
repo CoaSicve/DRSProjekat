@@ -7,10 +7,8 @@ from datetime import datetime
 from app.Services.EmailService import EmailService
 from app.Services.FlightMailTemplates import flight_created_body, flight_status_changed_body
 from app.Extensions.socketio import socketio
-import requests
 from app.Domain.models.Purchase import Purchase
 from app.Domain.enums.PurchaseStatus import PurchaseStatus
-from app.Services.PassengerMailTemplates import flight_cancelled_for_passenger_body
 
 class FlightService:
     
@@ -57,6 +55,34 @@ class FlightService:
         except Exception as e:
             print(f"Failed to send email: {e}")
         
+        return FlightService._to_dto(flight)
+
+    @staticmethod
+    def update_flight(flight_id: int, dto: CreateFlightDTO, user: dict):
+        flight = Flight.query.get(flight_id)
+        if not flight:
+            raise ValueError("Flight not found")
+
+        if user and user.get("role") == "MANAGER":
+            if int(flight.created_by_user_id) != int(user.get("user_id")):
+                raise ValueError("You can only edit your own flights")
+
+        airline = Airline.query.get(dto.airline_id)
+        if not airline:
+            raise ValueError("Airline not found")
+
+        flight.name = dto.name
+        flight.airline_id = dto.airline_id
+        flight.distance_km = dto.distance_km
+        flight.duration_minutes = dto.duration_minutes
+        flight.departure_time = datetime.strptime(dto.departure_time, "%Y-%m-%d %H:%M:%S")
+        flight.departure_airport = dto.departure_airport
+        flight.arrival_airport = dto.arrival_airport
+        flight.ticket_price = dto.ticket_price
+        flight.status = FlightStatus.PENDING
+        flight.rejection_reason = None
+        db.session.commit()
+
         return FlightService._to_dto(flight)
     
     @staticmethod
@@ -162,43 +188,18 @@ class FlightService:
             print(f"Failed to send admin email: {e}")
 
         # ------------------------
-        #  Mail svim korisnicima koji su kupili karte
+        #  Cancel purchases first
         # ------------------------
-        try:
+            # ------------------------
+            #  Cancel all purchases
+            # ------------------------
             purchases = Purchase.query.filter_by(
-                flight_id=flight.id,
-                status=PurchaseStatus.COMPLETED
+                flight_id=flight.id
             ).all()
-
             for purchase in purchases:
-                try:
-                    # Pozovi auth server da dobiješ email korisnika
-                    response = requests.get(
-                        f"{server_base_url}/api/v1/users/{purchase.user_id}",
-                        headers={"Authorization": f"Bearer {auth_token}"}
-                    )
-
-                    if response.status_code != 200:
-                        print(f"Could not fetch user {purchase.user_id}")
-                        continue
-
-                    user_data = response.json()
-                    user_email = user_data.get("email")
-
-                    if not user_email:
-                        continue
-
-                    EmailService.send(
-                        to=user_email,
-                        subject="🛑 Vaš let je otkazan",
-                        body=flight_cancelled_for_passenger_body(flight)
-                    )
-
-                except Exception as inner_e:
-                    print(f"Error notifying user {purchase.user_id}: {inner_e}")
-
-        except Exception as e:
-            print(f"Failed to notify passengers: {e}")
+                if purchase.status != PurchaseStatus.CANCELLED:
+                    purchase.status = PurchaseStatus.CANCELLED
+            db.session.commit()
 
         # ------------------------
         #  WebSocket event

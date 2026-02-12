@@ -65,7 +65,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
         if (response.token) {
           login(response.token);
           setTimeout(() => {
-            navigate("/dashboard");
+            navigate("/flights");
           }, 1500);
         }
       } else {
@@ -189,17 +189,20 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ authAPI }) => {
         <label htmlFor="gender" style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600 }}>
           Gender
         </label>
-        <input
-          type="text"
+        <select
           id="gender"
           name="gender"
           value={formData.gender}
           onChange={handleChange}
-          placeholder="Enter your gender"
           required
           disabled={isLoading}
-          style={{marginBottom: "20px"}}
-        />
+          style={{ marginBottom: "20px" }}
+        >
+          <option value="">Select gender...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
       <div>

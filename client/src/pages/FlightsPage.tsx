@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FlightsAPI } from "../api/flights/FlightsAPI";
 import { FlightDTO } from "../models/flights/FlightDTO";
 import { useAuth } from "../hooks/useAuthHook";
@@ -34,18 +35,18 @@ const calculateTimeRemaining = (departureTime: string, durationMinutes: number):
   return `${hours}h ${minutes}m ${seconds}s`;
 };
 
-type FlightTab = "upcoming" | "ongoing" | "past";
+type FlightTab = "upcoming" | "ongoing" | "past" | "pending" | "rejected";
 
 const FlightsPage: React.FC = () => {
   const { user, token } = useAuth();
   const { subscribe } = useWebSocketContext();
+  const navigate = useNavigate();
   const [flights, setFlights] = useState<FlightDTO[]>([]);
   const [airlines, setAirlines] = useState<AirlineDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FlightTab>("upcoming");
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [reservingFlightId, setReservingFlightId] = useState<number | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [processingFlightId, setProcessingFlightId] = useState<number | null>(null);
   const [rejectionReasons, setRejectionReasons] = useState<{ [key: number]: string }>({});
@@ -110,12 +111,14 @@ const FlightsPage: React.FC = () => {
     const upcoming: FlightDTO[] = [];
     const ongoing: FlightDTO[] = [];
     const past: FlightDTO[] = [];
+    const pending: FlightDTO[] = [];
+    const rejected: FlightDTO[] = [];
 
     // Filter flights based on user role, airline selection, and search text
     const filteredFlights = flights.filter((flight) => {
       // Check user role permissions
       if (user?.role !== UserRole.MANAGER && user?.role !== UserRole.ADMIN) {
-        if (!["APPROVED", "CANCELLED", "ONGOING", "COMPLETED"].includes(flight.status)) {
+        if (!["APPROVED", "CANCELLED", "IN_PROGRESS", "COMPLETED"].includes(flight.status)) {
           return false;
         }
       }
@@ -137,6 +140,16 @@ const FlightsPage: React.FC = () => {
     });
 
     filteredFlights.forEach((flight) => {
+      if (flight.status === "PENDING") {
+        pending.push(flight);
+        return;
+      }
+
+      if (flight.status === "REJECTED") {
+        rejected.push(flight);
+        return;
+      }
+
       if (flight.status === "CANCELLED") {
         past.push(flight);
         return;
@@ -154,40 +167,29 @@ const FlightsPage: React.FC = () => {
       }
     });
 
-    return { upcoming, ongoing, past };
+    return { upcoming, ongoing, past, pending, rejected };
   };
 
-  const { upcoming, ongoing, past } = categorizeFlights();
-  const displayFlights = activeTab === "upcoming" ? upcoming : activeTab === "ongoing" ? ongoing : past;
+  const { upcoming, ongoing, past, pending, rejected } = categorizeFlights();
+  const displayFlights =
+    activeTab === "pending"
+      ? pending
+      : activeTab === "rejected"
+      ? rejected
+      : activeTab === "upcoming"
+      ? upcoming
+      : activeTab === "ongoing"
+      ? ongoing
+      : past;
 
-  const handleReserveFlight = async (flight: FlightDTO) => {
-    if (!user || !token) {
-      setActionMessage({ type: "error", text: "You must be logged in to reserve a flight." });
-      return;
-    }
-
-    setReservingFlightId(flight.id);
-    setActionMessage(null);
-
-    try {
-      await purchasesAPI.createPurchase({
-        user_id: user.id,
-        flight_id: flight.id,
-      });
-      setActionMessage({ type: "success", text: `Flight "${flight.name}" reserved successfully! $${flight.ticket_price.toFixed(2)} deducted from your account.` });
-      // Refresh flights to update UI
-      const data = await flightsAPI.getAllFlights();
-      setFlights(data || []);
-    } catch (err: any) {
-      setActionMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Failed to reserve flight." });
-    } finally {
-      setReservingFlightId(null);
-    }
-  };
 
   const handleEditFlight = (flight: FlightDTO) => {
-    // TODO: Implement edit functionality
-    alert(`Edit functionality for flight "${flight.name}" will be implemented later.`);
+    navigate("/create-flight", {
+      state: {
+        flight,
+        rejectionReason: flight.rejection_reason || "",
+      },
+    });
   };
 
   const handleApproveFlight = async (flightId: number, flightName: string) => {
@@ -342,6 +344,21 @@ const FlightsPage: React.FC = () => {
             {actionMessage.text}
           </div>
         )}
+        {purchaseMsg && (
+          <div
+            style={{
+              padding: "12px 16px",
+              marginBottom: "16px",
+              background: "rgba(37, 99, 235, 0.12)",
+              color: "#2563eb",
+              border: "1px solid rgba(37, 99, 235, 0.4)",
+              borderRadius: "8px",
+              fontSize: "14px",
+            }}
+          >
+            {purchaseMsg}
+          </div>
+        )}
 
         <div
           style={{
@@ -419,6 +436,42 @@ const FlightsPage: React.FC = () => {
             borderBottom: "1px solid var(--win11-divider)",
           }}
         >
+          {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
+            <button
+              onClick={() => setActiveTab("pending")}
+              style={{
+                padding: "12px 24px",
+                background: activeTab === "pending" ? "rgba(96, 205, 255, 0.15)" : "transparent",
+                color: activeTab === "pending" ? "var(--win11-accent)" : "var(--win11-text-secondary)",
+                border: "none",
+                borderBottom: activeTab === "pending" ? "2px solid var(--win11-accent)" : "2px solid transparent",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              Pending ({pending.length})
+            </button>
+          )}
+          {user?.role === UserRole.MANAGER && (
+            <button
+              onClick={() => setActiveTab("rejected")}
+              style={{
+                padding: "12px 24px",
+                background: activeTab === "rejected" ? "rgba(96, 205, 255, 0.15)" : "transparent",
+                color: activeTab === "rejected" ? "var(--win11-accent)" : "var(--win11-text-secondary)",
+                border: "none",
+                borderBottom: activeTab === "rejected" ? "2px solid var(--win11-accent)" : "2px solid transparent",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              Rejected ({rejected.length})
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("upcoming")}
             style={{
@@ -506,10 +559,7 @@ const FlightsPage: React.FC = () => {
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Distance</th>
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Price</th>
                     <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Status</th>
-                    {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
-                      <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Actions</th>
-                    )}
-                    <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Purchase</th>
+                    <th style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "var(--win11-text-secondary)" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -565,8 +615,9 @@ const FlightsPage: React.FC = () => {
                           {f.status}
                         </span>
                       </td>
-                      {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
-                        <td style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", fontSize: "14px" }}>
+                      <td style={{ border: "1px solid var(--win11-divider)", padding: "12px 16px", fontSize: "14px" }}>
+                        {(user?.role === UserRole.MANAGER || user?.role === UserRole.ADMIN) && (
+                          <>
                           {user?.role === UserRole.MANAGER && f.status === "REJECTED" && (
                             <button
                               onClick={() => handleEditFlight(f)}
@@ -589,35 +640,6 @@ const FlightsPage: React.FC = () => {
                               }}
                             >
                               Edit
-                            </button>
-                          )}
-                          {user?.role === UserRole.MANAGER && f.status === "APPROVED" && activeTab === "upcoming" && (
-                            <button
-                              onClick={() => handleReserveFlight(f)}
-                              disabled={reservingFlightId === f.id}
-                              style={{
-                                padding: "8px 16px",
-                                background: reservingFlightId === f.id ? "rgba(107, 114, 128, 0.15)" : "rgba(34, 197, 94, 0.15)",
-                                color: reservingFlightId === f.id ? "#9ca3af" : "#22c55e",
-                                border: `1px solid ${reservingFlightId === f.id ? "#9ca3af" : "#22c55e"}`,
-                                borderRadius: "6px",
-                                fontSize: "13px",
-                                fontWeight: "600",
-                                cursor: reservingFlightId === f.id ? "not-allowed" : "pointer",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (reservingFlightId !== f.id) {
-                                  e.currentTarget.style.background = "rgba(34, 197, 94, 0.25)";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (reservingFlightId !== f.id) {
-                                  e.currentTarget.style.background = "rgba(34, 197, 94, 0.15)";
-                                }
-                              }}
-                            >
-                              {reservingFlightId === f.id ? "Reserving..." : "Reserve"}
                             </button>
                           )}
                           {user?.role === UserRole.ADMIN && f.status === "PENDING" && (
@@ -724,7 +746,7 @@ const FlightsPage: React.FC = () => {
                               </button>
                             </div>
                           )}
-                          {user?.role === UserRole.ADMIN && (f.status === "APPROVED" || f.status === "ONGOING") && (
+                          {user?.role === UserRole.ADMIN && (f.status === "APPROVED" || f.status === "IN_PROGRESS") && (
                             <button
                               onClick={() => handleCancelFlight(f.id, f.name)}
                               disabled={processingFlightId === f.id}
@@ -783,16 +805,19 @@ const FlightsPage: React.FC = () => {
                               {processingFlightId === f.id ? "Deleting..." : "Delete"}
                             </button>
                           )}
-                        </td>
-                      )}
-                      <td style={{border: "1px solid var(--win11-divider)", padding: "12px 16px", color: "var(--win11-text-primary)", fontSize: "14px"}}>
+                          </>
+                        )}
 
-                        {f.status === "APPROVED" ? (
+                        {f.status === "APPROVED" && user?.role !== UserRole.ADMIN ? (
                           <button
                           disabled={isPurchasing === f.id}
                           onClick={async () => {
                             if (!authUser?.id){
                               setPurchaseMsg("Morate biti ulogovani");
+                              return;
+                            }
+                            if (authUser?.role === UserRole.ADMIN) {
+                              setPurchaseMsg("Admini ne mogu kupovati karte");
                               return;
                             }
                             try{
@@ -802,10 +827,11 @@ const FlightsPage: React.FC = () => {
                               const res = await purchasesAPI.createPurchase({
                                 user_id: authUser.id,
                                 flight_id: f.id,
+                                user_email: authUser.email,
                               });
-                              setPurchaseMsg('Kupovina zapoceta! ID ${res.purchase_id}, status ${res.status}');
+                              setPurchaseMsg('Kupovina zapoceta! Potvrda kupovine ce stici na vas email.');
                             } catch (err: any){
-                              setPurchaseMsg('Kupovina neuspesna: ${err.response?.data?.error || err.message}');
+                              setPurchaseMsg('Kupovina neuspesna:' + (err.response?.data?.error || err.message));
                             } finally {
                               setIsPurchasing(null);
                             }
@@ -826,7 +852,6 @@ const FlightsPage: React.FC = () => {
                           <span style={{color: "#9ca3af", fontSize: "13px"}}></span>
                         )
                       }
-                      
                       </td>
                     </tr>
                   ))}

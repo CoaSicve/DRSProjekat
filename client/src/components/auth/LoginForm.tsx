@@ -36,7 +36,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ authAPI }) => {
 
       if (response.success && response.token) {
         login(response.token);
-        navigate("/dashboard");
+        navigate("/flights");
       } else {
         setError(response.message || "Login failed. Please try again.");
       }
@@ -49,7 +49,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ authAPI }) => {
 
   useEffect(() => {
     if(isAuthenticated)
-        navigate("/dashboard");
+        navigate("/flights");
   })
 
   return (

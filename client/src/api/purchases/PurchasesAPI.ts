@@ -12,7 +12,7 @@ export class PurchasesAPI implements IPurchasesAPI {
     });
   }
 
-  async createPurchase(data: { user_id: number; flight_id: number }): Promise<CreatePurchaseResponse> {
+  async createPurchase(data: { user_id: number; flight_id: number; user_email?: string }): Promise<CreatePurchaseResponse> {
     return (await this.axiosInstance.post<CreatePurchaseResponse>("/purchase", data)).data;
   }
 

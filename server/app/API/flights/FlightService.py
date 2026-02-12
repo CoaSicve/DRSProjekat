@@ -60,8 +60,37 @@ class FlightService:
             raise ValueError(f"Failed to create flight: {str(e)}")
 
     @staticmethod
+    def update_flight(flight_id: int, data: dict, token: str):
+        try:
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.put(
+                f"{FlightService._get_base_url()}/api/v1/flights/{flight_id}",
+                json=data,
+                headers=headers
+            )
+            response.raise_for_status()
+            try:
+                flight_response = response.json()
+                socketio.emit("flight_pending_approval", {
+                    "id": flight_response.get("id"),
+                    "name": flight_response.get("name"),
+                    "status": flight_response.get("status"),
+                    "created_by": flight_response.get("created_by_user_id"),
+                    "airline": flight_response.get("airline_name"),
+                    "departure": flight_response.get("departure_airport"),
+                    "arrival": flight_response.get("arrival_airport"),
+                    "departure_time": str(flight_response.get("departure_time"))
+                }, room="role_ADMIN")
+            except Exception as e:
+                print(f"Failed to emit WebSocket event: {e}")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Failed to update flight: {str(e)}")
+
+    @staticmethod
     def approve_flight(flight_id: int, token: str):
         try:
+            print(f"Approving flight {flight_id} with token: {token}")
             headers = {"Authorization": f"Bearer {token}"}
             response = requests.put(
                 f"{FlightService._get_base_url()}/api/v1/flights/{flight_id}/approve",

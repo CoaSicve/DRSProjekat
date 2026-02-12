@@ -42,6 +42,21 @@ def create_flight():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
+@flights_bp.route("/<int:flight_id>", methods=["PUT"])
+@manager_or_admin_required
+def update_flight(flight_id: int):
+    """Izmena leta - MANAGER ili ADMIN"""
+    try:
+        data = request.get_json()
+        dto = CreateFlightDTO(**data)
+        user = get_current_user()
+        flight = FlightService.update_flight(flight_id, dto, user)
+        return jsonify(flight.model_dump()), 200
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
 @flights_bp.route("/<int:flight_id>/approve", methods=["PUT"])
 @admin_required  # Samo ADMIN
 def approve_flight(flight_id: int):

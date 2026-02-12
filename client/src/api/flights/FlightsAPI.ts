@@ -28,6 +28,14 @@ export class FlightsAPI implements IFlightsAPI {
 		).data;
 	}
 
+	async updateFlight(token: string, id: number, data: CreateFlightDTO): Promise<FlightDTO> {
+		return (
+			await this.axiosInstance.put<FlightDTO>(`/flights/${id}`, data, {
+				headers: { Authorization: `Bearer ${token}` },
+			})
+		).data;
+	}
+
 	async approveFlight(token: string, id: number): Promise<FlightDTO> {
 		return (
 			await this.axiosInstance.put<FlightDTO>(`/flights/${id}/approve`, null, {
